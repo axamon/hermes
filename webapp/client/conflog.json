@@ -1,0 +1,12 @@
+{
+    "logtype": ["CDN","AVS","REGMAN"],
+    "CDN": {
+        "FIELDS": ["date","ip"]
+    },
+    "AVS": {
+        "FIELDS": ["userid","ip"]
+    },
+    "REGMAN": {
+        "FIELDS": ["ip","cli"]
+    }
+}

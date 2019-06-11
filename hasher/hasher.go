@@ -28,7 +28,7 @@ import (
 	"os"
 )
 
-// Sum Restituisce il chacksum hash della stringa passata come argomento.
+// Sum restituisce il chacksum hash della stringa passata come argomento.
 func Sum(file string) (hash string) {
 	f, err := os.Open(file)
 	if err != nil {
@@ -42,6 +42,25 @@ func Sum(file string) (hash string) {
 	}
 
 	hash = fmt.Sprintf("%x", h.Sum(nil))
+
+	return hash
+}
+
+// WithSeed restituisce il chacksum hash della stringa passata come argomento
+// a cui viene aggiunto un seed.
+func WithSeed(file, seed string) (hash string) {
+	f, err := os.Open(file)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		log.Fatal(err)
+	}
+
+	hash = fmt.Sprintf("%x", h.Sum([]byte(seed)))
 
 	return hash
 }

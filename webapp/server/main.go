@@ -33,7 +33,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/axamon/frodo/hasher"
+	"github.com/axamon/hermes/hasher"
 )
 
 //const userPass = "pippo:pippo"
@@ -54,6 +54,8 @@ type info struct {
 
 var userPass string
 
+const seed = "vvkidtbcjujhgffbjnvrngvrinvufjkvljreucecvfcj"
+
 func main() {
 	flag.Parse()
 
@@ -68,15 +70,9 @@ func main() {
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	http.HandleFunc("/saluto", func(w http.ResponseWriter, r *http.Request) {
-		//fmt.Fprintf(w, "Ciao, %q", html.EscapeString(r.URL.Path))
-		fmt.Fprintf(w, "Ciao, straniero")
-
-	})
-
 	http.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
 		//fmt.Fprintf(w, "Ciao, %q", html.EscapeString(r.URL.Path))
-		fmt.Fprintf(w, "Versione: 1.0\nAutore: Alberto Bregliano")
+		fmt.Fprintf(w, "Versione: 2.0\nAutore: Alberto Bregliano")
 
 	})
 
@@ -115,7 +111,7 @@ func main() {
 			log.Fatal("Deconing error", err, err.Error())
 		}
 
-		fmt.Println(element)
+		// fmt.Println(element)
 
 		filename := element.Name
 
@@ -142,21 +138,19 @@ func main() {
 
 		f.Close()
 
-		log.Println(hashreceived) // debug
+		// log.Println(hashreceived) // debug
 
-		hash := hasher.Sum(filename)
+		hash := hasher.WithSeed(filename, seed)
 
-		log.Println(hash) // debug
+		// log.Println(hash) // debug
 
-		if hashreceived != hash {
+		switch hashreceived == hash {
+		case false:
 			log.Printf("Errore nel trasferimento di: %s, hash non corrispondono.\n", filename)
+		case true:
+			// log.Printf("Bella prova zi! %s trasferito bene. Gli hash coincidono.\n", filename)
+			log.Printf("INFO Salvato file %s, scritti: %d bytes", filename, n)
 		}
-
-		if hashreceived == hash {
-			log.Printf("Bella prova zi! %s trasferito bene. Gli hash coincidono.\n", filename)
-		}
-
-		log.Printf("Salvato file %s, scritti: %d bytes", filename, n)
 
 		return
 

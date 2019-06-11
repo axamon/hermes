@@ -63,7 +63,7 @@ func main() {
 	remoteURL = "http://" + *remoteAddr + "/upload"
 
 	filedainviare := *file
-	timeout := time.Duration(*timout) * time.Microsecond
+	timeout := time.Duration(*timout) * time.Second
 
 	// Verifica che il server sia raggiungibile
 	_, err := net.DialTimeout("tcp", *remoteAddr, time.Duration(1*time.Second))
@@ -108,10 +108,10 @@ func upload(ctx context.Context, url, filedainviare string, timeout time.Duratio
 			log.Println(err.Error())
 		}
 
-		// Calcola hash del file.
+		// Calcola hash del file con seed.
 		hash := hasher.WithSeed(filedainviare, seed)
 
-		log.Println(hash) // debug
+		// log.Println(hash) // debug
 
 		// Effettua il marshalling in json dai dati secondo il type info.
 		kvPairs, err := json.Marshal(info{Name: filedainviare, Data: encoded, Hash: hash})
@@ -149,14 +149,14 @@ func upload(ctx context.Context, url, filedainviare string, timeout time.Duratio
 		//body, err := ioutil.ReadAll(resp.Body)
 		//fmt.Println("Response: ", string(body))
 
-		switch {
-		case resp.StatusCode <= 299:
-			return fmt.Errorf("Ok")
-		case resp.StatusCode > 299:
-			return fmt.Errorf("KO")
+		switch resp.StatusCode < 300 {
+		case true:
+			log.Printf("INFO File %s, trasferito correttamente\n", filedainviare)
+		case false:
+			log.Printf("ERROR Trasferimento del file %s non riuscito\n", filedainviare)
 		}
 
 	}
-	return nil
+	return err
 
 }

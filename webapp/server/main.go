@@ -111,7 +111,7 @@ func main() {
 			log.Fatal("Deconing error", err, err.Error())
 		}
 
-		fmt.Println(element)
+		// fmt.Println(element)
 
 		filename := element.Name
 
@@ -144,14 +144,14 @@ func main() {
 
 		// log.Println(hash) // debug
 
-		if hashreceived != hash {
+		switch hashreceived == hash {
+		case false:
 			log.Printf("Errore nel trasferimento di: %s, hash non corrispondono.\n", filename)
+		case true:
+			// log.Printf("Bella prova zi! %s trasferito bene. Gli hash coincidono.\n", filename)
+			log.Printf("INFO Salvato file %s, scritti: %d bytes", filename, n)
 		}
 
-		if hashreceived == hash {
-			log.Printf("Bella prova zi! %s trasferito bene. Gli hash coincidono.\n", filename)
-			log.Printf("Salvato file %s, scritti: %d bytes", filename, n)
-		}
 		return
 
 	})

@@ -18,32 +18,30 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-package zipfile
+package hasher
 
 import (
-	"compress/gzip"
+	"crypto/sha256"
+	"fmt"
 	"io"
 	"log"
 	"os"
 )
 
-// ReadAll legge il file zippato passato come parametro e restituisce
-// un io.Reader e un eventuale errore.
-func ReadAll(zipFile string) (content io.Reader, err error) {
-
-	// Apre il file zippato in lettura.
-	f, err := os.Open(zipFile)
+// Sum Restituisce il chacksum hash della stringa passata come argomento.
+func Sum(file string) (hash string) {
+	f, err := os.Open(file)
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer f.Close()
-	if err != nil {
-		log.Printf("Errore Impossibile aprire il file %s: %s\n", zipFile, err.Error())
+
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		log.Fatal(err)
 	}
 
-	// Unzippa in memoria.
-	gr, err := gzip.NewReader(f)
-	defer gr.Close()
-	if err != nil {
-		log.Printf("Errore Impossibile leggere il contenuto del file %s: %s\n", zipFile, err.Error())
-	}
+	hash = fmt.Sprintf("%x", h.Sum(nil))
 
-	return gr, err
+	return hash
 }

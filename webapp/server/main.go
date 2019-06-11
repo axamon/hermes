@@ -1,5 +1,22 @@
-// il server provvede un endpoint a cui il client può
-// inviare i log sanitarizzati.
+// Copyright (c) 2019 Alberto Bregliano
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to
+// deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
 
 package main
 
@@ -15,6 +32,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/axamon/frodo/hasher"
 )
 
 //const userPass = "pippo:pippo"
@@ -23,14 +42,14 @@ const unauth = http.StatusUnauthorized
 var client *http.Client
 var remoteURL string
 
-
 var userid = flag.String("user", "pippo", "username")
 var password = flag.String("pass", "pippo", "password")
 var port = flag.String("port", ":8080", "default :8080")
 
 type info struct {
-	Name string `json: name`
-	Data string `json: data`
+	Name string `json:"name"`
+	Data string `json:"data"`
+	Hash string `json:"hash"`
 }
 
 var userPass string
@@ -38,8 +57,9 @@ var userPass string
 func main() {
 	flag.Parse()
 
-	userPass = *userid+":"+*password
-	
+	// userPass contiene le credenziali
+	userPass = *userid + ":" + *password
+
 	s := &http.Server{
 		Addr: *port,
 		//	Handler:        myHandler,
@@ -47,6 +67,7 @@ func main() {
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
+
 	http.HandleFunc("/saluto", func(w http.ResponseWriter, r *http.Request) {
 		//fmt.Fprintf(w, "Ciao, %q", html.EscapeString(r.URL.Path))
 		fmt.Fprintf(w, "Ciao, straniero")
@@ -94,9 +115,14 @@ func main() {
 			log.Fatal("Deconing error", err, err.Error())
 		}
 
+		fmt.Println(element)
+
 		filename := element.Name
 
 		encoded := element.Data
+
+		hashreceived := element.Hash
+
 		decoded, err := base64.StdEncoding.DecodeString(encoded)
 		if err != nil {
 			log.Println(err.Error())
@@ -112,6 +138,22 @@ func main() {
 		n, err := f.Write(decoded)
 		if err != nil {
 			log.Println(err.Error())
+		}
+
+		f.Close()
+
+		log.Println(hashreceived) // debug
+
+		hash := hasher.Sum(filename)
+
+		log.Println(hash) // debug
+
+		if hashreceived != hash {
+			log.Printf("Errore nel trasferimento di: %s, hash non corrispondono.\n", filename)
+		}
+
+		if hashreceived == hash {
+			log.Printf("Bella prova zi! %s trasferito bene. Gli hash coincidono.\n", filename)
 		}
 
 		log.Printf("Salvato file %s, scritti: %d bytes", filename, n)

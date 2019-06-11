@@ -34,8 +34,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/axamon/frodo/hasher"
+	"github.com/axamon/hermes/hasher"
 )
+
+const seed = "vvkidtbcjujhgffbjnvrngvrinvufjkvljreucecvfcj"
 
 var timout = flag.Int64("timeout", 3, "tempo massimo per effettuare upload di un file")
 var userid = flag.String("user", "pippo", "username")
@@ -107,7 +109,7 @@ func upload(ctx context.Context, url, filedainviare string, timeout time.Duratio
 		}
 
 		// Calcola hash del file.
-		hash := hasher.Sum(filedainviare)
+		hash := hasher.WithSeed(filedainviare, seed)
 
 		log.Println(hash) // debug
 

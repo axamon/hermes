@@ -33,7 +33,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/axamon/frodo/hasher"
+	"github.com/axamon/hermes/hasher"
 )
 
 //const userPass = "pippo:pippo"
@@ -53,6 +53,8 @@ type info struct {
 }
 
 var userPass string
+
+const seed = "vvkidtbcjujhgffbjnvrngvrinvufjkvljreucecvfcj"
 
 func main() {
 	flag.Parse()
@@ -138,7 +140,7 @@ func main() {
 
 		// log.Println(hashreceived) // debug
 
-		hash := hasher.Sum(filename)
+		hash := hasher.WithSeed(filename, seed)
 
 		// log.Println(hash) // debug
 

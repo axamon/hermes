@@ -68,15 +68,9 @@ func main() {
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	http.HandleFunc("/saluto", func(w http.ResponseWriter, r *http.Request) {
-		//fmt.Fprintf(w, "Ciao, %q", html.EscapeString(r.URL.Path))
-		fmt.Fprintf(w, "Ciao, straniero")
-
-	})
-
 	http.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
 		//fmt.Fprintf(w, "Ciao, %q", html.EscapeString(r.URL.Path))
-		fmt.Fprintf(w, "Versione: 1.0\nAutore: Alberto Bregliano")
+		fmt.Fprintf(w, "Versione: 2.0\nAutore: Alberto Bregliano")
 
 	})
 
@@ -142,11 +136,11 @@ func main() {
 
 		f.Close()
 
-		log.Println(hashreceived) // debug
+		// log.Println(hashreceived) // debug
 
 		hash := hasher.Sum(filename)
 
-		log.Println(hash) // debug
+		// log.Println(hash) // debug
 
 		if hashreceived != hash {
 			log.Printf("Errore nel trasferimento di: %s, hash non corrispondono.\n", filename)
@@ -154,10 +148,8 @@ func main() {
 
 		if hashreceived == hash {
 			log.Printf("Bella prova zi! %s trasferito bene. Gli hash coincidono.\n", filename)
+			log.Printf("Salvato file %s, scritti: %d bytes", filename, n)
 		}
-
-		log.Printf("Salvato file %s, scritti: %d bytes", filename, n)
-
 		return
 
 	})

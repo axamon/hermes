@@ -1,5 +1,7 @@
 [![Build Status](https://travis-ci.org/axamon/hermes.svg?branch=master)](https://travis-ci.org/axamon/hermes)
 
+HErmetic Remote Metric Estimator Service
+
 
 Hermes recupera log di piattaforme nella catena del valore di TIMVISION e provvede ad oscurare i campi sensibili.
 

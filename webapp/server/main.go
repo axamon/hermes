@@ -54,6 +54,7 @@ type info struct {
 
 var userPass string
 
+// seed per avere risutati hash personalizzati
 const seed = "vvkidtbcjujhgffbjnvrngvrinvufjkvljreucecvfcj"
 
 func main() {
@@ -140,7 +141,10 @@ func main() {
 
 		// log.Println(hashreceived) // debug
 
-		hash := hasher.WithSeed(filename, seed)
+		hash, err := hasher.WithSeed(filename, seed)
+		if err != nil {
+			log.Printf("ERROR Impossibile ricavare hash del file %s: %s\n", filename, err.Error())
+		}
 
 		// log.Println(hash) // debug
 

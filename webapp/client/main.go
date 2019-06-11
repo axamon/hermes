@@ -37,6 +37,7 @@ import (
 	"github.com/axamon/hermes/hasher"
 )
 
+// seed per avere risutati hash personalizzati
 const seed = "vvkidtbcjujhgffbjnvrngvrinvufjkvljreucecvfcj"
 
 var timout = flag.Int64("timeout", 3, "tempo massimo per effettuare upload di un file")
@@ -109,7 +110,10 @@ func upload(ctx context.Context, url, filedainviare string, timeout time.Duratio
 		}
 
 		// Calcola hash del file con seed.
-		hash := hasher.WithSeed(filedainviare, seed)
+		hash, err := hasher.WithSeed(filedainviare, seed)
+		if err != nil {
+			log.Printf("ERROR Impossibile ricavare hash del file %s: %s\n", filedainviare, err.Error())
+		}
 
 		// log.Println(hash) // debug
 

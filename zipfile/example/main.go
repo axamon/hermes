@@ -4,12 +4,13 @@ import (
 	"bufio"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/axamon/hermes/zipfile"
 )
 
 func main() {
-	content, err := zipfile.ReadAll("20190607_03_00_vodabr.cb.log.gz")
+	content, err := zipfile.ReadAll(os.Args[1])
 
 	if err != nil {
 		log.Printf("KO")

@@ -1,40 +1,48 @@
 package zipfile_test
 
 import (
-	"reflect"
-	"testing"
+	"bufio"
+	"compress/gzip"
+	"fmt"
+	"log"
+	"os"
 
-	"github.com/golang/axamon/hermes/zipFile"
+	"github.com/axamon/hermes/zipfile"
 )
 
+const data = `
+test
+test
+test
+`
+
 func ExampleReadAll() {
-
-	zipFile.ReadAll("20190607_03_00_vodabr.cb.log.gz")
-
-}
-
-func TestReadAll(t *testing.T) {
-	type args struct {
-		zipFile string
+	testfile := "test.zip"
+	flags := os.O_WRONLY | os.O_CREATE | os.O_TRUNC
+	file, err := os.OpenFile(testfile, flags, 0644)
+	if err != nil {
+		log.Fatalf("Failed to open zip for writing: %s", err)
 	}
-	tests := []struct {
-		name        string
-		args        args
-		wantContent []byte
-		wantErr     bool
-	}{
-		// TODO: Add test cases.
+
+	zippato := gzip.NewWriter(file)
+
+	_, err = zippato.Write([]byte(data))
+	zippato.Close()
+
+	content, err := zipfile.ReadAll(testfile)
+
+	scan := bufio.NewScanner(content)
+	for scan.Scan() {
+		line := scan.Text()
+		fmt.Println(line)
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotContent, err := ReadAll(tt.args.zipFile)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ReadAll() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(gotContent, tt.wantContent) {
-				t.Errorf("ReadAll() = %v, want %v", gotContent, tt.wantContent)
-			}
-		})
+	file.Close()
+	err = os.Remove(testfile)
+	if err != nil {
+		log.Fatalf("Failed to open zip for writing: %s", err)
 	}
+	// Output:
+	// test
+	// test
+	// test
 }

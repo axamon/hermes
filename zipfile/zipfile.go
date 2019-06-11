@@ -2,14 +2,14 @@ package zipfile
 
 import (
 	"compress/gzip"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 )
 
 // ReadAll legge il file zippato passato come parametro e restituisce
 // il suo contenuto ed eventuale errore.
-func ReadAll(zipFile string) (content []byte, err error) {
+func ReadAll(zipFile string) (content io.Reader, err error) {
 
 	// Apre il file zippato in lettura.
 	f, err := os.Open(zipFile)
@@ -24,10 +24,10 @@ func ReadAll(zipFile string) (content []byte, err error) {
 		log.Printf("Errore Impossibile leggere il contenuto del file %s: %s\n", zipFile, err.Error())
 	}
 
-	content, err = ioutil.ReadAll(gr)
-	if err != nil {
-		log.Printf("Errore Impossibile prelevare contenuti del file file %s: %s\n", zipFile, err.Error())
-	}
+	// content, err = ioutil.ReadAll(gr)
+	// if err != nil {
+	//	log.Printf("Errore Impossibile prelevare contenuti del file file %s: %s\n", zipFile, err.Error())
+	// }
 
-	return content, err
+	return gr, err
 }

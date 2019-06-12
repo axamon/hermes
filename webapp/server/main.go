@@ -141,7 +141,7 @@ func main() {
 
 		// log.Println(hashreceived) // debug
 
-		hash, err := hasher.WithSeed(filename, seed)
+		hash, err := hasher.FileWithSeed(filename, seed)
 		if err != nil {
 			log.Printf("ERROR Impossibile ricavare hash del file %s: %s\n", filename, err.Error())
 		}

@@ -110,7 +110,7 @@ func upload(ctx context.Context, url, filedainviare string, timeout time.Duratio
 		}
 
 		// Calcola hash del file con seed.
-		hash, err := hasher.WithSeed(filedainviare, seed)
+		hash, err := hasher.FileWithSeed(filedainviare, seed)
 		if err != nil {
 			log.Printf("ERROR Impossibile ricavare hash del file %s: %s\n", filedainviare, err.Error())
 		}

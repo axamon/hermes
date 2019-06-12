@@ -21,6 +21,7 @@
 package hasher
 
 import (
+	"crypto/md5"
 	"crypto/sha256"
 	"fmt"
 	"io"
@@ -28,8 +29,31 @@ import (
 	"os"
 )
 
-// Sum restituisce il chacksum hash della stringa passata come argomento.
-func Sum(file string) (hash string, err error) {
+// StringSum restituisce il chacksum hash della stringa passata come argomento.
+func StringSum(str string) (hash string, err error) {
+
+	h := sha256.New()
+	h.Write([]byte(str))
+
+	hash = fmt.Sprintf("%x", h.Sum(nil))
+
+	return hash, err
+}
+
+// StringSumWithSeed restituisce il chacksum hash della stringa passata come argomento
+// più un seed personalizzato.
+func StringSumWithSeed(str, seed string) (hash string, err error) {
+
+	h := md5.New()
+	h.Write([]byte(str + seed))
+
+	hash = fmt.Sprintf("%x", h.Sum(nil))
+
+	return hash, err
+}
+
+// FileSum restituisce il chacksum hash della stringa passata come argomento.
+func FileSum(file string) (hash string, err error) {
 	f, err := os.Open(file)
 	if err != nil {
 		log.Fatal(err)
@@ -46,9 +70,9 @@ func Sum(file string) (hash string, err error) {
 	return hash, err
 }
 
-// WithSeed restituisce il chacksum hash della stringa passata come argomento
+// FileWithSeed restituisce il chacksum hash del file passato come argomento
 // a cui viene aggiunto un seed.
-func WithSeed(file, seed string) (hash string, err error) {
+func FileWithSeed(file, seed string) (hash string, err error) {
 	f, err := os.Open(file)
 	if err != nil {
 		log.Fatal(err)

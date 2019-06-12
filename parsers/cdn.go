@@ -22,6 +22,7 @@ package parsers
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"fmt"
 	"log"
@@ -29,7 +30,6 @@ import (
 	"strings"
 
 	"github.com/axamon/hermes/hasher"
-
 	"github.com/axamon/hermes/zipfile"
 )
 
@@ -44,25 +44,46 @@ func CDN(logfile string) (err error) {
 	ctx := context.TODO()
 
 	// Apri file zippato in memoria
-	reader, err := zipfile.ReadAll(ctx, logfile)
+	//reader, err := zipfile.ReadAll(ctx, logfile)
+
+	content, err := zipfile.ReadAll2(ctx, logfile)
 	if err != nil {
 		log.Printf("Error impossibile leggere file CDN %s, %s\n", logfile, err.Error())
 		//return
 	}
 
 	// Riconosci tipo di file è veramente CDN
-	scan := bufio.NewScanner(reader)
-	for scan.Scan() {
-		line := scan.Text()
-		//fmt.Println(line)
-		//if !isCDN.MatchString(line) {
-		//	err := fmt.Errorf("Error logfile %s non di tipo CDN: %s", logfile, line)
-		//	return err
-		//}
+	r := bytes.NewReader(content)
 
+	scan := bufio.NewScanner(r)
+	n := 0
+	// for {
+	// 	n++
+	// 	line, err := r.ReadString(10) // 0x0A separator = newline
+	// 	fmt.Println(line)
+	// 	if err == io.EOF {
+	// 		// do something here
+	// 		break
+	// 	} else if err != nil {
+	// 		return err // if you return error
+	// 	}
+	// }
+
+	for scan.Scan() {
+		n++
+		line := scan.Text()
+		fmt.Println(line)
+		if !isCDN.MatchString(line) {
+			err := fmt.Errorf("Error logfile %s non di tipo CDN: %s", logfile, line)
+			return err
+		}
 		// Splitta ogni linea
 		s := strings.Split(line, "\t")
-		//Sfmt.Println(s)
+		if len(s) < 15 {
+			log.Printf("Errore nella linea %s\n", line)
+			continue
+		}
+		// fmt.Println(s)
 		ip := s[2]
 		ipHashed, err := hasher.StringSumWithSeed(ip, seed)
 		if err != nil {
@@ -72,5 +93,6 @@ func CDN(logfile string) (err error) {
 		fmt.Println(s[:])
 	}
 
+	fmt.Println(n)
 	return err
 }

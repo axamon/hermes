@@ -18,43 +18,42 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-package zipfile
+package parsers
 
 import (
-	"compress/gzip"
+	"bufio"
 	"context"
 	"fmt"
-	"io"
 	"log"
-	"os"
+	"regexp"
+
+	"github.com/axamon/hermes/zipfile"
 )
 
-// ReadAll legge il file zippato passato come parametro e restituisce
-// un io.Reader e un eventuale errore.
-func ReadAll(ctx context.Context, zipFile string) (content io.Reader, err error) {
+var isCDN = regexp.MustCompile(`(?s)^\[.*\]\t[0-9]+\t\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\t[A-Z_]+\/\d{3}\t\d+\t[A-Z]+\t.*$`)
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+// CDN è il parser dei log provenienti dalla Content Delivery Network
+func CDN(logfile string) (err error) {
 
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered in f", r)
+	ctx := context.TODO()
+
+	// Apri file zippato in memoria
+	reader, err := zipfile.ReadAll(ctx, logfile)
+	if err != nil {
+		log.Printf("Error impossibile leggere file CDN %s, %s\n", logfile, err.Error())
+		//return
+	}
+
+	// Riconosci tipo di file è veramente CDN
+	scan := bufio.NewScanner(reader)
+	for scan.Scan() {
+		line := scan.Text()
+		if !isCDN.MatchString(line) {
+			err := fmt.Errorf("Error logfile %s non di tipo CDN: %s", logfile, line)
+			return err
 		}
-	}()
-
-	// Apre il file zippato in lettura.
-	f, err := os.Open(zipFile)
-	defer f.Close()
-	if err != nil {
-		log.Printf("Error Impossibile aprire il file %s: %s\n", zipFile, err.Error())
+		fmt.Println(line)
 	}
 
-	// Unzippa in memoria.
-	gr, err := gzip.NewReader(f)
-	defer gr.Close()
-	if err != nil {
-		log.Printf("Error Impossibile leggere il contenuto del file %s: %s\n", zipFile, err.Error())
-	}
-
-	return gr, err
+	return err
 }

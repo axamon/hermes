@@ -23,12 +23,10 @@ package zipfile_test
 import (
 	"bufio"
 	"compress/gzip"
+	"context"
 	"fmt"
-	"io"
 	"log"
 	"os"
-	"reflect"
-	"testing"
 
 	"github.com/axamon/hermes/zipfile"
 )
@@ -52,7 +50,8 @@ func ExampleReadAll() {
 	_, err = zippato.Write([]byte(data))
 	zippato.Close()
 
-	content, err := zipfile.ReadAll(testfile)
+	ctx := context.TODO()
+	content, err := zipfile.ReadAll(ctx, testfile)
 
 	scan := bufio.NewScanner(content)
 	for scan.Scan() {
@@ -68,30 +67,4 @@ func ExampleReadAll() {
 	// test
 	// test
 	// test
-}
-
-func TestReadAll(t *testing.T) {
-	type args struct {
-		zipFile string
-	}
-	tests := []struct {
-		name        string
-		args        args
-		wantContent io.Reader
-		wantErr     bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotContent, err := ReadAll(tt.args.zipFile)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ReadAll() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(gotContent, tt.wantContent) {
-				t.Errorf("ReadAll() = %v, want %v", gotContent, tt.wantContent)
-			}
-		})
-	}
 }

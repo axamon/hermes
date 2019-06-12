@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -10,7 +11,9 @@ import (
 )
 
 func main() {
-	content, err := zipfile.ReadAll(os.Args[1])
+	ctx := context.Background()
+
+	content, err := zipfile.ReadAll(ctx, os.Args[1])
 
 	if err != nil {
 		log.Printf("KO")

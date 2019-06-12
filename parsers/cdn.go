@@ -72,7 +72,7 @@ func CDN(logfile string) (err error) {
 	for scan.Scan() {
 		n++
 		line := scan.Text()
-		fmt.Println(line)
+		// fmt.Println(line)
 		if !isCDN.MatchString(line) {
 			err := fmt.Errorf("Error logfile %s non di tipo CDN: %s", logfile, line)
 			return err

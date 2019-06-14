@@ -19,3 +19,71 @@
 // IN THE SOFTWARE.
 
 package parsers
+
+import (
+	"bufio"
+	"bytes"
+	"context"
+	"fmt"
+	"log"
+	"regexp"
+
+	"github.com/axamon/hermes/hasher"
+	"github.com/axamon/hermes/parsers/ricercafruizioni"
+	"github.com/axamon/hermes/zipfile"
+)
+
+var isREGMAN = regexp.MustCompile(`(?m)^\w+\;\d{12}\;[0-9-\s:\.]+\;\w+\;\w+\;\w+\;[0-9\.]{8,16}\;.*$`)
+
+// REGMAN è il parser dei log provenienti di regman.
+func REGMAN(logfile string) (err error) {
+
+	fmt.Println(logfile)
+	ctx := context.TODO()
+
+	// Apri file zippato in memoria
+	//reader, err := zipfile.ReadAll(ctx, logfile)
+
+	content, err := zipfile.ReadAll2(ctx, logfile)
+	if err != nil {
+		log.Printf("Error impossibile leggere file REGMAN %s, %s\n", logfile, err.Error())
+		return err
+	}
+
+	r := bytes.NewReader(content)
+
+	scan := bufio.NewScanner(r)
+
+	n := 0
+	for scan.Scan() {
+		n++
+		line := scan.Text()
+
+		if !isREGMAN.MatchString(line) {
+			err := fmt.Errorf("Error logfile %s non di tipo REGMAN", logfile)
+			return err
+		}
+
+		s, err := ricercafruizioni.ElaboraREGMAN(ctx, line)
+		if err != nil {
+			log.Printf("Error Impossibile elaborare fruzione per record: %s", s)
+		}
+
+		if len(s) < 2 {
+			continue
+		}
+
+		// ! ANONIMIZZAZIONE IP PUBBLICO CLIENTE
+		ip := s[2]
+		ipHashed, err := hasher.StringSumWithSeed(ip, seed)
+		if err != nil {
+			log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
+		}
+		s[2] = ipHashed
+
+		fmt.Println(s[:])
+	}
+
+	fmt.Println(n)
+	return err
+}

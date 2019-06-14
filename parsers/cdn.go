@@ -26,26 +26,14 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 
 	"github.com/axamon/hermes/hasher"
 	"github.com/axamon/hermes/parsers/ricercafruizioni"
 	"github.com/axamon/hermes/zipfile"
 )
 
-const seed = "vvkidtbcjujhgffbjnvrngvrinvufjkvljreucecvfcj"
-
-type Utenti []Fruizioni
-
-type Fruizioni struct {
-	Hashfruizione map[string]bool
-	Clientip      map[string]string
-	Idvideoteca   map[string]string
-	Idaps         map[string]string
-	Edgeip        map[string]string
-	Giorno        map[string]string
-	Orario        map[string]string
-	Details       map[string][]float64 `json:"-"`
-}
+var isCDN = regexp.MustCompile(`(?s)^\[.*\]\t[0-9]+\t\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\t[A-Z_]+\/\d{3}\t\d+\t[A-Z]+\t.*$`)
 
 // CDN è il parser dei log provenienti dalla Content Delivery Network
 func CDN(logfile string) (err error) {

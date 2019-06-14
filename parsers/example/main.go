@@ -15,4 +15,9 @@ func main() {
 	if err != nil {
 		log.Printf("Error Impossibile parsare file CDN %s: %s\n", logfile, err.Error())
 	}
+
+	err = parsers.REGMAN(logfile)
+	if err != nil {
+		log.Printf("Error Impossibile parsare file CDN %s: %s\n", logfile, err.Error())
+	}
 }

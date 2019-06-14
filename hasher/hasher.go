@@ -32,7 +32,7 @@ import (
 // StringSum restituisce il chacksum hash della stringa passata come argomento.
 func StringSum(str string) (hash string, err error) {
 
-	h := sha256.New()
+	h := md5.New()
 	h.Write([]byte(str))
 
 	hash = fmt.Sprintf("%x", h.Sum(nil))

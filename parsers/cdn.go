@@ -26,16 +26,26 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"regexp"
-	"strings"
 
 	"github.com/axamon/hermes/hasher"
+	"github.com/axamon/hermes/parsers/ricercafruizioni"
 	"github.com/axamon/hermes/zipfile"
 )
 
-var isCDN = regexp.MustCompile(`(?s)^\[.*\]\t[0-9]+\t\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\t[A-Z_]+\/\d{3}\t\d+\t[A-Z]+\t.*$`)
-
 const seed = "vvkidtbcjujhgffbjnvrngvrinvufjkvljreucecvfcj"
+
+type Utenti []Fruizioni
+
+type Fruizioni struct {
+	Hashfruizione map[string]bool
+	Clientip      map[string]string
+	Idvideoteca   map[string]string
+	Idaps         map[string]string
+	Edgeip        map[string]string
+	Giorno        map[string]string
+	Orario        map[string]string
+	Details       map[string][]float64 `json:"-"`
+}
 
 // CDN è il parser dei log provenienti dalla Content Delivery Network
 func CDN(logfile string) (err error) {
@@ -52,44 +62,32 @@ func CDN(logfile string) (err error) {
 		//return
 	}
 
-	// Riconosci tipo di file è veramente CDN
 	r := bytes.NewReader(content)
 
 	scan := bufio.NewScanner(r)
-	n := 0
-	// for {
-	// 	n++
-	// 	line, err := r.ReadString(10) // 0x0A separator = newline
-	// 	fmt.Println(line)
-	// 	if err == io.EOF {
-	// 		// do something here
-	// 		break
-	// 	} else if err != nil {
-	// 		return err // if you return error
-	// 	}
-	// }
 
+	n := 0
 	for scan.Scan() {
 		n++
 		line := scan.Text()
-		// fmt.Println(line)
-		if !isCDN.MatchString(line) {
-			err := fmt.Errorf("Error logfile %s non di tipo CDN: %s", logfile, line)
-			return err
+
+		s, err := ricercafruizioni.ElaboraCDN(ctx, line)
+		if err != nil {
+			log.Printf("Error Impossibile elaborare fruzione per record: %s", s)
 		}
-		// Splitta ogni linea
-		s := strings.Split(line, "\t")
-		if len(s) < 15 {
-			log.Printf("Errore nella linea %s\n", line)
+
+		if len(s) < 2 {
 			continue
 		}
-		// fmt.Println(s)
+
+		// ! ANONIMIZZAZIONE IP PUBBLICO CLIENTE
 		ip := s[2]
 		ipHashed, err := hasher.StringSumWithSeed(ip, seed)
 		if err != nil {
 			log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
 		}
 		s[2] = ipHashed
+
 		fmt.Println(s[:])
 	}
 

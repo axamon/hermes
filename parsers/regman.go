@@ -74,7 +74,7 @@ func REGMAN(logfile string) (err error) {
 		}
 
 		// ! ANONIMIZZAZIONE IP PUBBLICO CLIENTE
-		ip := s[2]
+		ip := s[6]
 		ipHashed, err := hasher.StringSumWithSeed(ip, seed)
 		if err != nil {
 			log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())

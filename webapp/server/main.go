@@ -72,9 +72,7 @@ func main() {
 	}
 
 	http.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
-		//fmt.Fprintf(w, "Ciao, %q", html.EscapeString(r.URL.Path))
 		fmt.Fprintf(w, "Versione: 2.0\nAutore: Alberto Bregliano")
-
 	})
 
 	http.HandleFunc("/upload", func(w http.ResponseWriter, r *http.Request) {

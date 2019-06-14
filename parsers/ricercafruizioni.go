@@ -28,7 +28,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/axamon/hermes/hasher"
 )
@@ -74,12 +73,6 @@ func ElaboraCDN(ctx context.Context, line string) (s []string, err error) {
 	quartooraStr := strconv.Itoa(quartoora)
 
 	IDipq, _ := hasher.StringSum(s[2] + quartooraStr)
-
-	if utf8.ValidString(quartooraStr) != true {
-
-		time.Sleep(2 * time.Second)
-		log.Println("Problema con il timestamp")
-	}
 
 	//epoch := t.Format(time.RFC1123Z)
 
@@ -172,12 +165,6 @@ func ElaboraREGMAN(ctx context.Context, line string) (s []string, err error) {
 	quartooraStr := strconv.Itoa(quartoora)
 
 	IDipq, _ := hasher.StringSum(s[6] + quartooraStr)
-
-	if utf8.ValidString(quartooraStr) != true {
-
-		time.Sleep(2 * time.Second)
-		log.Println("Problema con il timestamp")
-	}
 
 	//epoch := t.Format(time.RFC1123Z)
 

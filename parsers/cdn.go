@@ -43,7 +43,7 @@ func CDN(logfile string) (err error) {
 	// Apri file zippato in memoria
 	//reader, err := zipfile.ReadAll(ctx, logfile)
 
-	content, err := zipfile.ReadAll2(ctx, logfile)
+	content, err := zipfile.ReadAllGZ(ctx, logfile)
 	if err != nil {
 		log.Printf("Error impossibile leggere file CDN %s, %s\n", logfile, err.Error())
 		//return

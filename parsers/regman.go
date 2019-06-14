@@ -43,7 +43,7 @@ func REGMAN(logfile string) (err error) {
 	// Apri file zippato in memoria
 	//reader, err := zipfile.ReadAll(ctx, logfile)
 
-	content, err := zipfile.ReadAll3(ctx, logfile)
+	content, err := zipfile.ReadAllZIP(ctx, logfile)
 	if err != nil {
 		log.Printf("Error impossibile leggere file REGMAN %s, %s\n", logfile, err.Error())
 		return err

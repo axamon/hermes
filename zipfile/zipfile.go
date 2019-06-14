@@ -62,9 +62,9 @@ func ReadAll(ctx context.Context, zipFile string) (content io.Reader, err error)
 	return gr, err
 }
 
-// ReadAll2 legge il file zippato passato come parametro e restituisce
-// un io.Reader e un eventuale errore.
-func ReadAll2(ctx context.Context, zipFile string) (content []byte, err error) {
+// ReadAllGZ legge il file compresso in gzip passato come parametro e restituisce
+// l'intero contenuto del file e un eventuale errore.
+func ReadAllGZ(ctx context.Context, zipFile string) (content []byte, err error) {
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -97,9 +97,9 @@ func ReadAll2(ctx context.Context, zipFile string) (content []byte, err error) {
 	return content, err
 }
 
-// ReadAll3 legge il file zippato passato come parametro e restituisce
-// un io.Reader e un eventuale errore.
-func ReadAll3(ctx context.Context, zipFile string) (content []byte, err error) {
+// ReadAllZIP legge il file compresso in ZIP passato come parametro e restituisce
+// l'intero contenuto del file e un eventuale errore.
+func ReadAllZIP(ctx context.Context, zipFile string) (content []byte, err error) {
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()

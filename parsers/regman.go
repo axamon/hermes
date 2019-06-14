@@ -79,7 +79,7 @@ func REGMAN(logfile string) (err error) {
 		if err != nil {
 			log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
 		}
-		s[2] = ipHashed
+		s[6] = ipHashed
 
 		fmt.Println(s[:])
 	}

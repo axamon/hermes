@@ -138,6 +138,32 @@ func ElaboraREGMAN(ctx context.Context, line string) (s []string, err error) {
 	// Il separatore per i log REGMAN è ";"
 	s = strings.Split(line, ";")
 
+	t, err := time.Parse("2006-01-02 15:04:05", s[2])
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	ora := t.Hour()
+	minuto := t.Minute()
+
+	// calcola a quale quartodora appartiene il dato.
+	quartoora := ((ora * 60) + minuto) / 15
+
+	quartooraStr := strconv.Itoa(quartoora)
+
+	IDipq, _ := hasher.StringSum(s[6] + quartooraStr)
+
+	if utf8.ValidString(quartooraStr) != true {
+
+		time.Sleep(2 * time.Second)
+		log.Println("Problema con il timestamp")
+	}
+
+	//epoch := t.Format(time.RFC1123Z)
+
+	Time := t.Format("200601021504") //idem con patate questo è lo stracazzuto ISO8601 meglio c'è solo epoch
+	//fmt.Println(Time)
+
 	Hash, err := hasher.StringSum(s[0])
 	if err != nil {
 		log.Printf("Error Hashing in errore: %s\n", err.Error())
@@ -145,7 +171,7 @@ func ElaboraREGMAN(ctx context.Context, line string) (s []string, err error) {
 
 	//ingestafruizioni(Hash, clientip, idvideoteca, idaps, edgeip, giorno, orario, speed)
 
-	s = append(s, Hash)
+	s = append(s, Time, Hash, IDipq, quartooraStr)
 
 	return s, err
 }

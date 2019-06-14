@@ -58,6 +58,12 @@ func CDN(logfile string) (err error) {
 		n++
 		line := scan.Text()
 
+		// Verifica che logfile sia di tipo CDN.
+		if !isCDN.MatchString(line) {
+			err := fmt.Errorf("Error logfile %s non di tipo CDN", logfile)
+			return err
+		}
+
 		s, err := ElaboraCDN(ctx, line)
 		if err != nil {
 			log.Printf("Error Impossibile elaborare fruzione per record: %s", s)

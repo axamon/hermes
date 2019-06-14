@@ -21,6 +21,7 @@
 package zipfile
 
 import (
+	"archive/zip"
 	"compress/gzip"
 	"context"
 	"fmt"
@@ -28,6 +29,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 )
 
 // ReadAll legge il file zippato passato come parametro e restituisce
@@ -90,6 +92,44 @@ func ReadAll2(ctx context.Context, zipFile string) (content []byte, err error) {
 	content, err = ioutil.ReadAll(gr)
 	if err != nil {
 		log.Printf("Error Impossiblile copiare in memoria il file: %s\n", err.Error())
+	}
+
+	return content, err
+}
+
+// ReadAll3 legge il file zippato passato come parametro e restituisce
+// un io.Reader e un eventuale errore.
+func ReadAll3(ctx context.Context, zipFile string) (content []byte, err error) {
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered in f", r)
+		}
+	}()
+
+	// Unzippa in memoria.
+	r, err := zip.OpenReader(zipFile)
+	defer r.Close()
+	if err != nil {
+		log.Printf("Error Impossibile leggere il contenuto del file %s: %s\n", zipFile, err.Error())
+	}
+
+	for _, f := range r.File {
+		// Store filename/path for returning and using later on
+		if strings.Contains(f.Name, "csv") {
+			rc, err := f.Open()
+			if err != nil {
+				log.Println(err)
+			}
+			content, err = ioutil.ReadAll(rc)
+			if err != nil {
+				log.Printf("Error Impossiblile copiare in memoria il file: %s\n", err.Error())
+			}
+			break
+		}
 	}
 
 	return content, err

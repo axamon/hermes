@@ -29,7 +29,6 @@ import (
 	"regexp"
 
 	"github.com/axamon/hermes/hasher"
-	"github.com/axamon/hermes/parsers/ricercafruizioni"
 	"github.com/axamon/hermes/zipfile"
 )
 
@@ -59,7 +58,7 @@ func CDN(logfile string) (err error) {
 		n++
 		line := scan.Text()
 
-		s, err := ricercafruizioni.ElaboraCDN(ctx, line)
+		s, err := ElaboraCDN(ctx, line)
 		if err != nil {
 			log.Printf("Error Impossibile elaborare fruzione per record: %s", s)
 		}

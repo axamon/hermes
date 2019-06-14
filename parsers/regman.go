@@ -29,7 +29,6 @@ import (
 	"regexp"
 
 	"github.com/axamon/hermes/hasher"
-	"github.com/axamon/hermes/parsers/ricercafruizioni"
 	"github.com/axamon/hermes/zipfile"
 )
 
@@ -64,7 +63,7 @@ func REGMAN(logfile string) (err error) {
 			return err
 		}
 
-		s, err := ricercafruizioni.ElaboraREGMAN(ctx, line)
+		s, err := ElaboraREGMAN(ctx, line)
 		if err != nil {
 			log.Printf("Error Impossibile elaborare fruzione per record: %s", s)
 		}

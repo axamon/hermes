@@ -37,7 +37,7 @@ test
 test
 `
 
-func ExampleReadAll() {
+func ExampleReadAllGZ() {
 	testfile := "test.zip"
 	flags := os.O_WRONLY | os.O_CREATE | os.O_TRUNC
 	file, err := os.OpenFile(testfile, flags, 0644)

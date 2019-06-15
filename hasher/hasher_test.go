@@ -28,7 +28,7 @@ import (
 	"github.com/axamon/hermes/hasher"
 )
 
-func ExampleSum() {
+func ExampleFileSum() {
 	testfile := "test.zip"
 	flags := os.O_WRONLY | os.O_CREATE | os.O_TRUNC
 	file, err := os.OpenFile(testfile, flags, 0644)
@@ -40,7 +40,7 @@ func ExampleSum() {
 
 	file.Close()
 
-	hash, err := hasher.Sum(testfile)
+	hash, err := hasher.FileSum(testfile)
 	if err != nil {
 		log.Printf("ERROR Impossibile ricavare hash del file %s: %s\n", testfile, err.Error())
 	}
@@ -57,7 +57,7 @@ func ExampleSum() {
 
 }
 
-func ExampleWithSeed() {
+func ExampleFileWithSeed() {
 	testfile := "test.zip"
 	flags := os.O_WRONLY | os.O_CREATE | os.O_TRUNC
 	file, err := os.OpenFile(testfile, flags, 0644)
@@ -69,7 +69,7 @@ func ExampleWithSeed() {
 
 	file.Close()
 
-	hash, err := hasher.WithSeed(testfile, "vvkidtbcjujhttuuikvjtfhilrkfkkfgejcktriignbr")
+	hash, err := hasher.FileWithSeed(testfile, "vvkidtbcjujhttuuikvjtfhilrkfkkfgejcktriignbr")
 	if err != nil {
 		log.Printf("ERROR Impossibile ricavare hash del file %s più seed: %s\n", testfile, err.Error())
 	}

@@ -14,6 +14,12 @@ import (
 	"github.com/axamon/hermes/hasher"
 )
 
+func checkErr(msg string, err error) {
+	if err != nil {
+		log.Println(msg, err.Error())
+	}
+}
+
 func version(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Versione: 2.0\nAutore: Alberto Bregliano")
 }
@@ -50,7 +56,7 @@ func upload(w http.ResponseWriter, r *http.Request) {
 
 	err = json.Unmarshal(jsn, &element)
 	if err != nil {
-		log.Fatal("Deconing error", err, err.Error())
+		log.Fatal("Decoding error", err, err.Error())
 	}
 
 	// fmt.Println(element)
@@ -58,15 +64,11 @@ func upload(w http.ResponseWriter, r *http.Request) {
 	filename, encoded, hashreceived := element.Name, element.Data, element.Hash
 
 	decoded, err := base64.StdEncoding.DecodeString(encoded)
-	if err != nil {
-		log.Println(err.Error())
-	}
+	checkErr("Problema nel decoding: ", err)
 
 	//fmt.Println(filename, decoded)
 	f, err := os.Create("./" + filename)
-	if err != nil {
-		log.Println(err.Error())
-	}
+	checkErr("Problema nel creare il file: ", err)
 	defer f.Close()
 
 	n, err := f.Write(decoded)

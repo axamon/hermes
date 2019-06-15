@@ -40,7 +40,7 @@ func ElaboraCDN(ctx context.Context, line string) (s []string, err error) {
 
 	// fmt.Println(line)
 	if !isCDN.MatchString(line) {
-		err := fmt.Errorf("Error record %s non di tipo CDN: %s", line)
+		err := fmt.Errorf("Error record non di tipo CDN: %s", line)
 		return nil, err
 	}
 
@@ -136,6 +136,7 @@ func ElaboraCDN(ctx context.Context, line string) (s []string, err error) {
 	return s, err
 }
 
+// ElaboraREGMAN parsa i filelog provenienti da regman.
 func ElaboraREGMAN(ctx context.Context, line string) (s []string, err error) {
 
 	// ricerca le fruzioni nell'intervallo temporale richiesto

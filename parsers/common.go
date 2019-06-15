@@ -22,8 +22,10 @@ package parsers
 
 const seed = "vvkidtbcjujhgffbjnvrngvrinvufjkvljreucecvfcj"
 
+// Utenti clienti TimVision.
 type Utenti []Fruizioni
 
+// Fruizioni archivia tuttue le fruizioni effettuate.
 type Fruizioni struct {
 	Hashfruizione map[string]bool
 	Clientip      map[string]string

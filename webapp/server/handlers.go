@@ -55,11 +55,7 @@ func upload(w http.ResponseWriter, r *http.Request) {
 
 	// fmt.Println(element)
 
-	filename := element.Name
-
-	encoded := element.Data
-
-	hashreceived := element.Hash
+	filename, encoded, hashreceived := element.Name, element.Data, element.Hash
 
 	decoded, err := base64.StdEncoding.DecodeString(encoded)
 	if err != nil {

@@ -78,9 +78,11 @@ func upload(w http.ResponseWriter, r *http.Request) {
 
 	jsn, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Panic("errore reading body ", err, err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("500 - Something bad happened!"))
+
+		log.Panic("errore reading body ", err, err.Error())
+		return
 	}
 
 	err = json.Unmarshal(jsn, &element)

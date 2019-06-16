@@ -82,6 +82,7 @@ func upload(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("500 - Something bad happened!"))
 
 		log.Panic("errore reading body ", err, err.Error())
+		http.Error(w, http.StatusText(500), 500)
 		return
 	}
 

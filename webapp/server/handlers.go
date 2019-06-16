@@ -46,6 +46,12 @@ func version(w http.ResponseWriter, r *http.Request) {
 
 func upload(w http.ResponseWriter, r *http.Request) {
 
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered in f", r)
+		}
+	}()
+
 	auth := r.Header.Get("Authorization")
 
 	if !strings.HasPrefix(auth, "Basic ") {

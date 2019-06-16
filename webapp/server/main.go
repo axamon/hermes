@@ -30,6 +30,7 @@ import (
 
 //const userPass = "pippo:pippo"
 const unauth = http.StatusUnauthorized
+const timedout = http.StatusRequestTimeout
 
 var client *http.Client
 var remoteURL string

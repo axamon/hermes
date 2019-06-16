@@ -78,11 +78,8 @@ func upload(w http.ResponseWriter, r *http.Request) {
 
 	jsn, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("500 - Something bad happened!"))
-
 		log.Print("errore reading body ", err, err.Error())
-		http.Error(w, http.StatusText(500), 500)
+		http.Error(w, http.StatusText(timedout), timedout)
 		return
 	}
 

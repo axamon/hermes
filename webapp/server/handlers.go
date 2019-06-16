@@ -50,6 +50,8 @@ func upload(w http.ResponseWriter, r *http.Request) {
 		if r := recover(); r != nil {
 			fmt.Println("Recovered in f", r)
 		}
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - Something bad happened!"))
 	}()
 
 	auth := r.Header.Get("Authorization")
@@ -78,11 +80,12 @@ func upload(w http.ResponseWriter, r *http.Request) {
 	jsn, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Panic("errore reading body ", err, err.Error())
+
 	}
 
 	err = json.Unmarshal(jsn, &element)
 	if err != nil {
-		log.Fatal("Decoding error", err, err.Error())
+		log.Fatal("Decoding error ", err, err.Error())
 	}
 
 	// fmt.Println(element)

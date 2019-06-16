@@ -66,5 +66,5 @@ func main() {
 
 	http.HandleFunc("/upload", upload)
 
-	log.Fatal(s.ListenAndServe())
+	log.Println(s.ListenAndServe())
 }

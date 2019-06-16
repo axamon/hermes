@@ -119,6 +119,7 @@ func upload(w http.ResponseWriter, r *http.Request) {
 	switch hashreceived == hash {
 	case false:
 		log.Printf("Errore nel trasferimento di: %s, hash non corrispondono.\n", filename)
+		w.Write([]byte("Errore nel trasferimento di: %s, hash non corrispondono"))
 	case true:
 		// log.Printf("Bella prova zi! %s trasferito bene. Gli hash coincidono.\n", filename)
 		log.Printf("INFO Salvato file %s, scritti: %d bytes", filename, n)

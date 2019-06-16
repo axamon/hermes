@@ -153,7 +153,7 @@ func upload(ctx context.Context, url, filedainviare string, timeout time.Duratio
 		//body, err := ioutil.ReadAll(resp.Body)
 		//fmt.Println("Response: ", string(body))
 
-		switch resp.StatusCode < 300 {
+		switch resp.StatusCode = 200 {
 		case true:
 			log.Printf("INFO File %s trasferito correttamente\n", filedainviare)
 		case false:

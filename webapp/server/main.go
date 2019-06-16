@@ -22,6 +22,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -51,6 +52,12 @@ const seed = "vvkidtbcjujhgffbjnvrngvrinvufjkvljreucecvfcj"
 func main() {
 	flag.Parse()
 
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered in f", r)
+		}
+	}()
+
 	// userPass contiene le credenziali
 	userPass = *userid + ":" + *password
 
@@ -66,5 +73,6 @@ func main() {
 
 	http.HandleFunc("/upload", upload)
 
-	log.Println(s.ListenAndServe())
+	log.Panic(s.ListenAndServe())
+
 }

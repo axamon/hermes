@@ -69,7 +69,7 @@ func main() {
 	// in MB
 	sizefile := fi.Size() / 1024 / 1024
 	if sizefile > 100 {
-		log.Printf("Error File %s troppo grande: %v\n", filedainviare, sizefile)
+		log.Printf("Error File %s troppo grande: %v MB\n", filedainviare, sizefile)
 		return
 	}
 

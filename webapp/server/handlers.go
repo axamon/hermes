@@ -48,7 +48,7 @@ func upload(w http.ResponseWriter, r *http.Request) {
 
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in f", r)
+			log.Println("Recovered in f", r)
 		}
 
 	}()

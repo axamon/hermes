@@ -20,4 +20,9 @@ func main() {
 	if err != nil {
 		log.Printf("Error Impossibile parsare file REGMAN %s: %s\n", logfile, err.Error())
 	}
+
+	err = parsers.AVS(logfile)
+	if err != nil {
+		log.Printf("Error Impossibile parsare file REGMAN %s: %s\n", logfile, err.Error())
+	}
 }

@@ -183,3 +183,39 @@ func ElaboraREGMAN(ctx context.Context, line string) (s []string, err error) {
 
 	return s, err
 }
+
+// ElaboraAVS parsa i filelog provenienti da AVS.
+func ElaboraAVS(ctx context.Context, line string) (s []string, err error) {
+
+	// Il separatore per i log AVS è "|"
+	s = strings.Split(line, "|")
+
+	t, err := time.Parse("2006-01-02T15:04:05", s[1])
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	ora := t.Hour()
+	minuto := t.Minute()
+
+	// calcola a quale quartodora appartiene il dato.
+	quartoora := ((ora * 60) + minuto) / 15
+
+	quartooraStr := strconv.Itoa(quartoora)
+
+	//epoch := t.Format(time.RFC1123Z)
+
+	Time := t.Format("200601021504") //idem con patate questo è lo stracazzuto ISO8601 meglio c'è solo epoch
+	//fmt.Println(Time)
+
+	Hash, err := hasher.StringSum(s[10])
+	if err != nil {
+		log.Printf("Error Hashing in errore: %s\n", err.Error())
+	}
+
+	//ingestafruizioni(Hash, clientip, idvideoteca, idaps, edgeip, giorno, orario, speed)
+
+	s = append(s, Time, Hash, quartooraStr)
+
+	return s, err
+}

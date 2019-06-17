@@ -22,6 +22,7 @@ package parsers
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"fmt"
 	"log"
@@ -30,7 +31,7 @@ import (
 	"github.com/axamon/hermes/zipfile"
 )
 
-var isAVS = regexp.MustCompile(`(?s)^\[.*\]\t[0-9]+\t\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\t[A-Z_]+\/\d{3}\t\d+\t[A-Z]+\t.*$`)
+var isAVS = regexp.MustCompile(`(?m)^.*\|.*\|.*$`)
 
 // AVS è il parser dei log provenienti da AVS
 func AVS(logfile string) (err error) {
@@ -38,22 +39,41 @@ func AVS(logfile string) (err error) {
 	ctx := context.TODO()
 
 	// Apri file zippato in memoria
-	reader, err := zipfile.ReadAll(ctx, logfile)
+	content, err := zipfile.ReadAllZIP(ctx, logfile)
 	if err != nil {
 		log.Printf("Error impossibile leggere file AVS %s, %s\n", logfile, err.Error())
 		//return
 	}
 
-	// Riconosci tipo di file è veramente AVS
-	scan := bufio.NewScanner(reader)
+	r := bytes.NewReader(content)
+
+	scan := bufio.NewScanner(r)
+
+	n := 0
 	for scan.Scan() {
+		n++
 		line := scan.Text()
+
+		// Verifica che logfile sia di tipo CDN.
 		if !isAVS.MatchString(line) {
-			err := fmt.Errorf("Error logfile %s non di tipo AVS: %s", logfile, line)
+			err := fmt.Errorf("Error logfile %s non di tipo AVS", logfile)
 			return err
 		}
-		fmt.Println(line)
+
+		s, err := ElaboraAVS(ctx, line)
+		if err != nil {
+			log.Printf("Error Impossibile elaborare fruzione per record: %s", s)
+		}
+
+		if len(s) < 2 {
+			continue
+		}
+
+		// ! ANONIMIZZAZIONE CAMPI SENSIBILI
+
+		fmt.Println(s[:])
 	}
 
+	fmt.Println(n)
 	return err
 }

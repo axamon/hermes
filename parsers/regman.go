@@ -59,14 +59,14 @@ func REGMAN(logfile string) (err error) {
 		line := scan.Text()
 
 		// Verifica che logfile sia di tipo regman.
-		/* if !isREGMAN.MatchString(line) {
+		if !isREGMAN.MatchString(line) {
 			err := fmt.Errorf("Error logfile %s non di tipo REGMAN", logfile)
 			return err
-		} */
+		}
 
 		s, err := ElaboraREGMAN(ctx, line)
 		if err != nil {
-			log.Printf("Error Impossibile elaborare fruzione per record: %s", s)
+			log.Printf("Error Impossibile elaborare REGMAN record: %s", s)
 		}
 
 		if len(s) < 2 {

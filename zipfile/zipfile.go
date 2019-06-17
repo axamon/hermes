@@ -119,7 +119,7 @@ func ReadAllZIP(ctx context.Context, zipFile string) (content []byte, err error)
 
 	for _, f := range r.File {
 		// Store filename/path for returning and using later on
-		if strings.Contains(f.Name, "csv") || strings.Contains(f.Name, "AVS") {
+		if strings.Contains(f.Name, "csv") {
 			rc, err := f.Open()
 			if err != nil {
 				log.Println(err)

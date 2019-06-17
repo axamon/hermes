@@ -28,6 +28,7 @@ import (
 	"log"
 	"regexp"
 
+	"github.com/axamon/hermes/hasher"
 	"github.com/axamon/hermes/zipfile"
 )
 
@@ -42,7 +43,7 @@ func AVS(logfile string) (err error) {
 	content, err := zipfile.ReadAllZIP(ctx, logfile)
 	if err != nil {
 		log.Printf("Error impossibile leggere file AVS %s, %s\n", logfile, err.Error())
-		//return
+		return
 	}
 
 	r := bytes.NewReader(content)
@@ -60,6 +61,8 @@ func AVS(logfile string) (err error) {
 			return err
 		}
 
+		fmt.Println(line) // debug
+
 		s, err := ElaboraAVS(ctx, line)
 		if err != nil {
 			log.Printf("Error Impossibile elaborare fruzione per record: %s", s)
@@ -70,6 +73,20 @@ func AVS(logfile string) (err error) {
 		}
 
 		// ! ANONIMIZZAZIONE CAMPI SENSIBILI
+
+		mailutente := s[10]
+		mailHashed, err := hasher.StringSumWithSeed(mailutente, seed)
+		if err != nil {
+			log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
+		}
+		s[10] = mailHashed
+
+		utente := s[11]
+		utenteHashed, err := hasher.StringSumWithSeed(utente, seed)
+		if err != nil {
+			log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
+		}
+		s[11] = utenteHashed
 
 		fmt.Println(s[:])
 	}

@@ -46,7 +46,7 @@ func CDN(logfile string) (err error) {
 	content, err := zipfile.ReadAllGZ(ctx, logfile)
 	if err != nil {
 		log.Printf("Error impossibile leggere file CDN %s, %s\n", logfile, err.Error())
-		//return
+		return
 	}
 
 	r := bytes.NewReader(content)

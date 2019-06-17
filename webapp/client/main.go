@@ -58,11 +58,11 @@ func main() {
 
 	// Crea il contesto.
 	ctx := context.Background()
-	
+
 	filedainviare := *file
 
 	fi, err := os.Stat(filedainviare)
-	if err !=nil {
+	if err != nil {
 		log.Println(err.Error())
 	}
 
@@ -72,7 +72,6 @@ func main() {
 		log.Printf("Error File %s troppo grande.\n", filedainviare)
 		return
 	}
-
 
 	// Verifica che il server remoto sia raggiungibile
 	_, err = net.DialTimeout("tcp", *remoteAddr, time.Duration(3*time.Second))
@@ -84,7 +83,6 @@ func main() {
 	// fmt.Println(*remoteAddr) // debug
 	remoteURL := "http://" + *remoteAddr + "/upload" // ! TODO CAMBIARE IN HTTPS
 
-	
 	timeout := time.Duration(*timout) * time.Second
 
 	err = upload(ctx, remoteURL, filedainviare, timeout)
@@ -116,8 +114,6 @@ func upload(ctx context.Context, url, filedainviare string, timeout time.Duratio
 		if err != nil {
 			log.Println(err.Error())
 		}
-
-		if len(data)
 
 		// Encoda il file in base64.
 		encoded := base64.StdEncoding.EncodeToString(data)

@@ -157,7 +157,7 @@ func upload(ctx context.Context, url, filedainviare string, timeout time.Duratio
 		case true:
 			log.Printf("INFO File %s trasferito correttamente\n", filedainviare)
 		case false:
-			log.Printf("ERROR Trasferimento del file %s non riuscito\n", filedainviare)
+			log.Printf("ERROR Trasferimento del file %s non riuscito: %s\n", filedainviare, resp.Status)
 		}
 
 	}

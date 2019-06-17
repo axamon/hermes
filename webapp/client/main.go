@@ -75,7 +75,7 @@ func main() {
 
 
 	// Verifica che il server remoto sia raggiungibile
-	_, err := net.DialTimeout("tcp", *remoteAddr, time.Duration(3*time.Second))
+	_, err = net.DialTimeout("tcp", *remoteAddr, time.Duration(3*time.Second))
 	if err != nil {
 		log.Printf("Server remoto non raggiungibile, error: %s\n", err.Error())
 		return

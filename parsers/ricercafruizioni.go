@@ -72,13 +72,16 @@ func ElaboraCDN(ctx context.Context, line string) (s []string, err error) {
 
 	quartooraStr := strconv.Itoa(quartoora)
 
-	IDipq, _ := hasher.StringSum(s[2] + quartooraStr)
+	//IDipq, _ := hasher.StringSum(s[2] + quartooraStr)
 
 	//epoch := t.Format(time.RFC1123Z)
 
-	Time := t.Format("200601021504") //idem con patate questo è lo stracazzuto ISO8601 meglio c'è solo epoch
+	//Time := t.Format("200601021504") //idem con patate questo è lo stracazzuto ISO8601 meglio c'è solo epoch
 	//fmt.Println(Time)
 	var speed, tts, bytes float64
+
+	// Crea il campo giornoq per integrare i log al quarto d'ora.
+	giornoq := []string{t.Format("20060102") + "q" + quartooraStr}
 
 	tts, err = strconv.ParseFloat(s[1], 8)
 	if err != nil {
@@ -105,15 +108,13 @@ func ElaboraCDN(ctx context.Context, line string) (s []string, err error) {
 	pezziurl := strings.Split(Urlpath, "/")
 	//fmt.Println(pezziurl)
 
-	var idvideoteca, idaps, Hash string
-
 	if ok := !strings.Contains(Urlpath, "video="); ok == true { //solo i chunk video
 
 		return nil, nil
 	}
-	idvideoteca = pezziurl[6]
+	idvideoteca := pezziurl[6]
 	//tipocodifica := pezziurl[7]
-	idaps = pezziurl[8]
+	//idavs := pezziurl[8]
 	//fmt.Println(idvideoteca)
 	//encoding := pezziurl[10]
 	//fmt.Println(encoding)
@@ -124,16 +125,18 @@ func ElaboraCDN(ctx context.Context, line string) (s []string, err error) {
 		log.Fatal(err.Error())
 	} */
 	//bitrateMB := bitrate * bitstoMB
-	Hash, err = hasher.StringSum(clientip + idvideoteca + ua)
+
+	Hashfruizione, err := hasher.StringSum(clientip + idvideoteca + ua)
 	if err != nil {
 		log.Printf("Error Hashing in errore: %s\n", err.Error())
 	}
 
 	//ingestafruizioni(Hash, clientip, idvideoteca, idaps, edgeip, giorno, orario, speed)
 
-	s = append(s, Time, Hash, idaps, idvideoteca, status, speedStr, quartooraStr, IDipq)
+	//s = append(s, Time, Hashfruizione, idaps, idvideoteca, status, speedStr, quartooraStr, IDipq)
 
-	return s, err
+	result := append(giornoq, Hashfruizione, clientip, idvideoteca, status, speedStr)
+	return result, err
 }
 
 // ElaboraREGMAN parsa i filelog provenienti da regman.
@@ -165,23 +168,25 @@ func ElaboraREGMAN(ctx context.Context, line string) (s []string, err error) {
 
 	quartooraStr := strconv.Itoa(quartoora)
 
-	IDipq, _ := hasher.StringSum(s[6] + quartooraStr)
+	//IDipq, _ := hasher.StringSum(s[6] + quartooraStr)
 
 	//epoch := t.Format(time.RFC1123Z)
 
-	Time := t.Format("200601021504") //idem con patate questo è lo stracazzuto ISO8601 meglio c'è solo epoch
+	// Crea il campo giornoq per integrare i log al quarto d'ora.
+	giornoq := []string{t.Format("20060102") + "q" + quartooraStr}
+
+	//Time := t.Format("200601021504") //idem con patate questo è lo stracazzuto ISO8601 meglio c'è solo epoch
 	//fmt.Println(Time)
 
-	Hash, err := hasher.StringSum(s[0])
-	if err != nil {
-		log.Printf("Error Hashing in errore: %s\n", err.Error())
-	}
+	// recupera ip cliente
+	ipregman := s[6]
+	cli := s[1]
 
 	//ingestafruizioni(Hash, clientip, idvideoteca, idaps, edgeip, giorno, orario, speed)
 
-	s = append(s, Time, Hash, IDipq, quartooraStr)
+	result := append(giornoq, ipregman, cli, s[0], s[5])
 
-	return s, err
+	return result, err
 }
 
 // ElaboraAVS parsa i filelog provenienti da AVS.

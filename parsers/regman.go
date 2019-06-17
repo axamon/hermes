@@ -32,7 +32,7 @@ import (
 	"github.com/axamon/hermes/zipfile"
 )
 
-var isREGMAN = regexp.MustCompile(`(?m)^\w+\;\d{12}\;[0-9-\s:\.]+\;\w+\;\w+\;\w+\;[0-9\.]{8,16}\;.*$`)
+var isREGMAN = regexp.MustCompile(`(?m)^.*\;.*$`)
 
 // REGMAN è il parser dei log provenienti di regman.
 func REGMAN(logfile string) (err error) {
@@ -74,12 +74,19 @@ func REGMAN(logfile string) (err error) {
 		}
 
 		// ! ANONIMIZZAZIONE IP PUBBLICO CLIENTE
-		ip := s[6]
+		ip := s[1]
 		ipHashed, err := hasher.StringSumWithSeed(ip, seed)
 		if err != nil {
 			log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
 		}
-		s[6] = ipHashed
+		s[1] = ipHashed
+
+		cli := s[2]
+		clihashed, err := hasher.StringSumWithSeed(cli, seed)
+		if err != nil {
+			log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
+		}
+		s[2] = clihashed
 
 		fmt.Println(s[:])
 	}

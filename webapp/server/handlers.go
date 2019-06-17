@@ -24,7 +24,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -71,7 +70,7 @@ func upload(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(unauth), unauth)
 		return
 	}
-	io.WriteString(w, "Goodbye, World!")
+	//io.WriteString(w, "Goodbye, World!")
 	//log.Println(r.Method)
 
 	element := info{}

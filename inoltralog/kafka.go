@@ -29,8 +29,33 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
+// VerificaLocalKafka verifica se l'instanza è raggiungibile.
+func VerificaLocalKafka(ctx context.Context) (err error) {
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Sceglie il topic su cui scirvere.
+	topic := "logs"
+
+	// Seclie la partizione Kafka su cui scrivere.
+	partition := 0
+
+	// Configura la connessione.
+	conn, err := kafka.DialLeader(ctx, "tcp", "localhost:9092", topic, partition)
+	defer conn.Close()
+	if err != nil {
+		log.Printf("Error impossibile aprire connessione a kafka\n")
+	}
+
+	return err
+}
+
 // LocalKafkaProducer invia records a una istanza kafka locale.
 func LocalKafkaProducer(ctx context.Context, s []string) (err error) {
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	// Se non riesce a scrivere su Kafka procede senza andare in panico.
 	defer func() {

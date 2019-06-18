@@ -11,7 +11,7 @@ import (
 
 func main() {
 
-	ctx := context.WithCancel(context.Background(), cancel)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	var err error

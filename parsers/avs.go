@@ -38,9 +38,7 @@ import (
 var isAVS = regexp.MustCompile(`(?m)^.*\|.*\|.*$`)
 
 // AVS è il parser dei log provenienti da AVS
-func AVS(logfile string) (err error) {
-
-	ctx := context.TODO()
+func AVS(ctx context.Context, logfile string) (err error) {
 
 	// Apri file zippato in memoria
 	content, err := zipfile.ReadAllZIP(ctx, logfile)

@@ -53,8 +53,8 @@ func LocalKafkaProducer(ctx context.Context, s []string) (err error) {
 		log.Printf("Error impossibile aprire connessione a kafka\n")
 	}
 
-	// Apre connessione all'istanza kafka.
-	err = conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+	// Imposta timeout per la scrittura sull'istanza kafka.
+	err = conn.SetWriteDeadline(time.Now().Add(2 * time.Second))
 	if err != nil {
 		log.Printf("Error Timeout connessione a kafka\n")
 	}

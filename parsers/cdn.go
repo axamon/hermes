@@ -56,6 +56,7 @@ func CDN(ctx context.Context, logfile string) (err error) {
 
 	scan := bufio.NewScanner(r)
 
+	var records []string
 	n := 0
 	for scan.Scan() {
 		n++
@@ -76,7 +77,7 @@ func CDN(ctx context.Context, logfile string) (err error) {
 			continue
 		}
 
-		// ! ANONIMIZZAZIONE IP PUBBLICO CLIENTE
+		// ! OFFUSCAMENTO IP PUBBLICO CLIENTE
 		ip := s[2]
 		ipHashed, err := hasher.StringSumWithSalt(ip, salt)
 		if err != nil {
@@ -84,12 +85,20 @@ func CDN(ctx context.Context, logfile string) (err error) {
 		}
 		s[2] = ipHashed
 
-		fmt.Println(s[:])
+		//	fmt.Println(s[:]) // debug
+		records = append(records, strings.Join(s, "\t"))
 
-		err = inoltralog.LocalKafkaProducer(ctx, s)
-		if err != nil {
-			log.Printf("Error Impossibile salvare su kafka: %s\n", err.Error())
-		}
+	}
+
+	// Scrive uno per uno su standard output i record offuscati.
+	for _, line := range records {
+		fmt.Println(line)
+	}
+
+	// Invia i records su kafka locale.
+	err = inoltralog.LocalKafkaProducer(ctx, records)
+	if err != nil {
+		log.Printf("Error Impossibile salvare su kafka: %s\n", err.Error())
 	}
 
 	fmt.Println(n)
@@ -108,11 +117,11 @@ func ElaboraCDN(ctx context.Context, line string) (s []string, err error) {
 		return nil, err
 	}
 
-	// Splitta la linea nei supi fields.
-	// Il separatore per i log CDN è il tab: \t
+	// Splitta la linea nei suoi fields,
+	// il separatore per i log CDN è il tab: \t
 	s = strings.Split(line, "\t")
 
-	//parsa la URL nelle sue componenti
+	// Parsa la URL nelle sue componenti.
 	u, err := url.Parse(s[6])
 	if err != nil {
 		log.Printf("Error nel parsing URL di: %s\n", line)
@@ -122,7 +131,7 @@ func ElaboraCDN(ctx context.Context, line string) (s []string, err error) {
 		continue
 	} */
 
-	//converte i timestamp come piacciono a me
+	// Converte il timestamp del log.
 	t, err := time.Parse("[02/Jan/2006:15:04:05.000+000]", s[0])
 	if err != nil {
 		log.Println(err.Error())
@@ -131,9 +140,10 @@ func ElaboraCDN(ctx context.Context, line string) (s []string, err error) {
 	ora := t.Hour()
 	minuto := t.Minute()
 
-	// calcola a quale quartodora appartiene il dato.
+	// Calcola a quale quarto d'ora appartiene il dato.
 	quartoora := ((ora * 60) + minuto) / 15
 
+	// Trasforma quartoora in stringa.
 	quartooraStr := strconv.Itoa(quartoora)
 
 	//IDipq, _ := hasher.StringSum(s[2] + quartooraStr)
@@ -157,10 +167,19 @@ func ElaboraCDN(ctx context.Context, line string) (s []string, err error) {
 		log.Fatal(err.Error())
 	}
 
+	// Calcola la velocità di download.
 	speed = (bytes / tts)
+
+	// Trasforma la velocità in stringa.
 	speedStr := fmt.Sprintf("%f", speed)
+
+	// Recupera l'ip del cliente.
 	clientip := s[2]
-	status := s[3] //da usare per errori 40x e 50x
+
+	// Recupera lo status HTTP del chunk.
+	status := s[3]
+
+	// Recupera lo user agent del cliente.
 	ua := s[8]
 
 	//fmt.Println(Urlschema)
@@ -172,11 +191,15 @@ func ElaboraCDN(ctx context.Context, line string) (s []string, err error) {
 	pezziurl := strings.Split(Urlpath, "/")
 	//fmt.Println(pezziurl)
 
+	// Tratta solo i chunck di tipo video // ! da verificare se va bene o no!
 	if ok := !strings.Contains(Urlpath, "video="); ok == true { //solo i chunk video
 
 		return nil, nil
 	}
+
+	// Recupera il valore univoco del video.
 	idvideoteca := pezziurl[6]
+
 	//tipocodifica := pezziurl[7]
 	//idavs := pezziurl[8]
 	//fmt.Println(idvideoteca)
@@ -190,6 +213,7 @@ func ElaboraCDN(ctx context.Context, line string) (s []string, err error) {
 	} */
 	//bitrateMB := bitrate * bitstoMB
 
+	// Crea l'idfruzione univoco del cliente.
 	Hashfruizione, err := hasher.StringSum(clientip + idvideoteca + ua)
 	if err != nil {
 		log.Printf("Error Hashing in errore: %s\n", err.Error())

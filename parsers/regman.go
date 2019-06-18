@@ -32,6 +32,7 @@ import (
 	"time"
 
 	"github.com/axamon/hermes/hasher"
+	"github.com/axamon/hermes/inoltralog"
 	"github.com/axamon/hermes/zipfile"
 )
 
@@ -55,6 +56,7 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 
 	scan := bufio.NewScanner(r)
 
+	var records []string
 	n := 0
 	for scan.Scan() {
 		n++
@@ -90,7 +92,19 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 		}
 		s[2] = clihashed
 
-		fmt.Println(s[:])
+		//	fmt.Println(s[:]) // debug
+		records = append(records, strings.Join(s, "\t"))
+	}
+
+	// Scrive uno per uno su standard output i record offuscati.
+	for _, line := range records {
+		fmt.Println(line)
+	}
+
+	// Invia i records su kafka locale.
+	err = inoltralog.LocalKafkaProducer(ctx, records)
+	if err != nil {
+		log.Printf("Error Impossibile salvare su kafka: %s\n", err.Error())
 	}
 
 	fmt.Println(n)

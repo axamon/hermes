@@ -32,6 +32,7 @@ import (
 	"time"
 
 	"github.com/axamon/hermes/hasher"
+	"github.com/axamon/hermes/inoltralog"
 	"github.com/axamon/hermes/zipfile"
 )
 
@@ -51,6 +52,7 @@ func AVS(ctx context.Context, logfile string) (err error) {
 
 	scan := bufio.NewScanner(r)
 
+	var records []string
 	n := 0
 	for scan.Scan() {
 		n++
@@ -73,7 +75,7 @@ func AVS(ctx context.Context, logfile string) (err error) {
 			continue
 		}
 
-		// ! ANONIMIZZAZIONE CAMPI SENSIBILI.
+		// ! OFFUSCAMENTO CAMPI SENSIBILI.
 
 		// Effettua hash della mail dell'utente.
 		mailclienteHash, err := hasher.StringSumWithSalt(s[3], salt)
@@ -88,8 +90,19 @@ func AVS(ctx context.Context, logfile string) (err error) {
 			log.Printf("Error Hashing in errore: %s\n", err.Error())
 		}
 		s[1] = cliHash
+		//	fmt.Println(s[:]) // debug
+		records = append(records, strings.Join(s, "\t"))
+	}
 
-		fmt.Println(s[:])
+	// Scrive uno per uno su standard output i record offuscati.
+	for _, line := range records {
+		fmt.Println(line)
+	}
+
+	// Invia i records su kafka locale.
+	err = inoltralog.LocalKafkaProducer(ctx, records)
+	if err != nil {
+		log.Printf("Error Impossibile salvare su kafka: %s\n", err.Error())
 	}
 
 	fmt.Println(n)

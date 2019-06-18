@@ -27,18 +27,20 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/axamon/hermes/hasher"
 	"github.com/axamon/hermes/zipfile"
 )
 
-var isREGMAN = regexp.MustCompile(`(?m)^.*\;.*$`)
+var isREGMAN = regexp.MustCompile(`(?m)^.*\;.*\;.*\;.*\;.*\;.*$`)
 
 // REGMAN è il parser dei log provenienti di regman.
-func REGMAN(logfile string) (err error) {
+func REGMAN(ctx context.Context, logfile string) (err error) {
 
-	fmt.Println(logfile)
-	ctx := context.TODO()
+	// fmt.Println(logfile) // debug
 
 	// Apri file zippato in memoria
 	//reader, err := zipfile.ReadAll(ctx, logfile)
@@ -75,14 +77,14 @@ func REGMAN(logfile string) (err error) {
 
 		// ! ANONIMIZZAZIONE IP PUBBLICO CLIENTE
 		ip := s[1]
-		ipHashed, err := hasher.StringSumWithSeed(ip, seed)
+		ipHashed, err := hasher.StringSumWithSalt(ip, salt)
 		if err != nil {
 			log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
 		}
 		s[1] = ipHashed
 
 		cli := s[2]
-		clihashed, err := hasher.StringSumWithSeed(cli, seed)
+		clihashed, err := hasher.StringSumWithSalt(cli, salt)
 		if err != nil {
 			log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
 		}
@@ -93,4 +95,54 @@ func REGMAN(logfile string) (err error) {
 
 	fmt.Println(n)
 	return err
+}
+
+// ElaboraREGMAN parsa i filelog provenienti da regman.
+func ElaboraREGMAN(ctx context.Context, line string) (s []string, err error) {
+
+	// ricerca le fruzioni nell'intervallo temporale richiesto
+	// l'intervallo temporale inzia con l'inzio di una fruizione
+
+	// fmt.Println(line)
+	if !isREGMAN.MatchString(line) {
+		err := fmt.Errorf("Error recordnon di tipo REGMAN: %s", line)
+		return nil, err
+	}
+
+	// Splitta la linea nei supi fields.
+	// Il separatore per i log REGMAN è ";"
+	s = strings.Split(line, ";")
+
+	t, err := time.Parse("2006-01-02 15:04:05", s[2])
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	ora := t.Hour()
+	minuto := t.Minute()
+
+	// calcola a quale quartodora appartiene il dato.
+	quartoora := ((ora * 60) + minuto) / 15
+
+	quartooraStr := strconv.Itoa(quartoora)
+
+	//IDipq, _ := hasher.StringSum(s[6] + quartooraStr)
+
+	//epoch := t.Format(time.RFC1123Z)
+
+	// Crea il campo giornoq per integrare i log al quarto d'ora.
+	giornoq := []string{t.Format("20060102") + "q" + quartooraStr}
+
+	//Time := t.Format("200601021504") //idem con patate questo è lo stracazzuto ISO8601 meglio c'è solo epoch
+	//fmt.Println(Time)
+
+	// recupera ip cliente
+	ipregman := s[6]
+	cli := s[1]
+
+	//ingestafruizioni(Hash, clientip, idvideoteca, idaps, edgeip, giorno, orario, speed)
+
+	result := append(giornoq, ipregman, cli, s[0], s[5])
+
+	return result, err
 }

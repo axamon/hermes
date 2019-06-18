@@ -40,12 +40,12 @@ func StringSum(str string) (hash string, err error) {
 	return hash, err
 }
 
-// StringSumWithSeed restituisce il chacksum hash della stringa passata come argomento
+// StringSumWithSalt restituisce il chacksum hash della stringa passata come argomento
 // più un seed personalizzato.
-func StringSumWithSeed(str, seed string) (hash string, err error) {
+func StringSumWithSalt(str, salt string) (hash string, err error) {
 
 	h := md5.New()
-	h.Write([]byte(str + seed))
+	h.Write([]byte(str + salt))
 
 	hash = fmt.Sprintf("%x", h.Sum(nil))
 

@@ -27,6 +27,9 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/axamon/hermes/hasher"
 	"github.com/axamon/hermes/zipfile"
@@ -61,7 +64,7 @@ func AVS(logfile string) (err error) {
 			return err
 		}
 
-		fmt.Println(line) // debug
+		// fmt.Println(line) // debug
 
 		s, err := ElaboraAVS(ctx, line)
 		if err != nil {
@@ -72,25 +75,66 @@ func AVS(logfile string) (err error) {
 			continue
 		}
 
-		// ! ANONIMIZZAZIONE CAMPI SENSIBILI
+		// ! ANONIMIZZAZIONE CAMPI SENSIBILI.
 
-		mailutente := s[10]
-		mailHashed, err := hasher.StringSumWithSeed(mailutente, seed)
+		// Effettua hash della mail dell'utente.
+		mailclienteHash, err := hasher.StringSumWithSalt(s[3], salt)
 		if err != nil {
-			log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
+			log.Printf("Error Hashing in errore: %s\n", err.Error())
 		}
-		s[10] = mailHashed
+		s[3] = mailclienteHash
 
-		utente := s[11]
-		utenteHashed, err := hasher.StringSumWithSeed(utente, seed)
+		// Effettua hash dell cli utente.
+		cliHash, err := hasher.StringSumWithSalt(s[1], salt)
 		if err != nil {
-			log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
+			log.Printf("Error Hashing in errore: %s\n", err.Error())
 		}
-		s[11] = utenteHashed
+		s[1] = cliHash
 
 		fmt.Println(s[:])
 	}
 
 	fmt.Println(n)
 	return err
+}
+
+// ElaboraAVS parsa i filelog provenienti da AVS.
+func ElaboraAVS(ctx context.Context, line string) (result []string, err error) {
+
+	// Il separatore per i log AVS è "|"
+	s := strings.Split(line, "|")
+
+	// Parsa i timestamp specifici dei log AVS.
+	t, err := time.Parse("2006-01-02T15:04:05", s[1])
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	ora := t.Hour()
+	minuto := t.Minute()
+
+	// calcola a quale quartodora appartiene il dato.
+	quartoora := ((ora * 60) + minuto) / 15
+
+	quartooraStr := strconv.Itoa(quartoora)
+
+	//epoch := t.Format(time.RFC1123Z)
+
+	//Time := t.Format("200601021504") //idem con patate questo è lo stracazzuto ISO8601 meglio c'è solo epoch
+	//fmt.Println(Time)
+
+	// Crea il campo giornoq per integrare i log al quarto d'ora.
+	giornoq := []string{t.Format("20060102") + "q" + quartooraStr}
+
+	cli := s[2]
+
+	idvideoteca := s[5]
+
+	mailcliente := s[10]
+
+	//ingestafruizioni(Hash, clientip, idvideoteca, idaps, edgeip, giorno, orario, speed)
+
+	result = append(giornoq, cli, idvideoteca, mailcliente)
+
+	return result, err
 }

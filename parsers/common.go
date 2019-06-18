@@ -20,7 +20,7 @@
 
 package parsers
 
-const seed = "vvkidtbcjujhgffbjnvrngvrinvufjkvljreucecvfcj"
+const salt = "vvkidtbcjujhgffbjnvrngvrinvufjkvljreucecvfcj"
 
 // Utenti clienti TimVision.
 type Utenti []Fruizioni

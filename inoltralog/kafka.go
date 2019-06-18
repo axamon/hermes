@@ -24,7 +24,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/segmentio/kafka-go"
@@ -60,11 +59,13 @@ func LocalKafkaProducer(ctx context.Context, s []string) (err error) {
 	}
 
 	// Produce record in kafka.
-	_, err = conn.WriteMessages(
-		kafka.Message{Value: []byte(strings.Join(s, ";"))},
-	)
-	if err != nil {
-		log.Printf("Error produrre record in kafka\n")
+	for _, line := range s {
+		_, err = conn.WriteMessages(
+			kafka.Message{Value: []byte(line)},
+		)
+		if err != nil {
+			log.Printf("Error produrre record in kafka\n")
+		}
 	}
 
 	return err

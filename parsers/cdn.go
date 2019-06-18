@@ -78,12 +78,11 @@ func CDN(ctx context.Context, logfile string) (err error) {
 		}
 
 		// ! OFFUSCAMENTO IP PUBBLICO CLIENTE
-		ip := s[2]
-		ipHashed, err := hasher.StringSumWithSalt(ip, salt)
+		// s[2] è l'ip pubblico del cliente da offuscare
+		s[2], err = hasher.StringSumWithSalt(s[2], salt)
 		if err != nil {
 			log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
 		}
-		s[2] = ipHashed
 
 		//	fmt.Println(s[:]) // debug
 		records = append(records, strings.Join(s, "\t"))

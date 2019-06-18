@@ -75,21 +75,20 @@ func AVS(ctx context.Context, logfile string) (err error) {
 			continue
 		}
 
-		// ! OFFUSCAMENTO CAMPI SENSIBILI.
+		// ! OFFUSCAMENTO CAMPI SENSIBILI
 
 		// Effettua hash della mail dell'utente.
-		mailclienteHash, err := hasher.StringSumWithSalt(s[3], salt)
+		s[3], err = hasher.StringSumWithSalt(s[3], salt)
 		if err != nil {
 			log.Printf("Error Hashing in errore: %s\n", err.Error())
 		}
-		s[3] = mailclienteHash
 
-		// Effettua hash dell cli utente.
-		cliHash, err := hasher.StringSumWithSalt(s[1], salt)
+		// Effettua hash del cli utente.
+		s[1], err = hasher.StringSumWithSalt(s[1], salt)
 		if err != nil {
 			log.Printf("Error Hashing in errore: %s\n", err.Error())
 		}
-		s[1] = cliHash
+
 		//	fmt.Println(s[:]) // debug
 		records = append(records, strings.Join(s, "\t"))
 	}

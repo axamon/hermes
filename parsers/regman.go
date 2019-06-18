@@ -77,21 +77,18 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 			continue
 		}
 
-		// ! ANONIMIZZAZIONE IP PUBBLICO CLIENTE
-		ip := s[1]
-		ipHashed, err := hasher.StringSumWithSalt(ip, salt)
+		// ! OFFUSCAMENTO CAMPI SENSIBILI
+		// s[1] contiente ip pubblico cliente.
+		s[1], err = hasher.StringSumWithSalt(s[1], salt)
 		if err != nil {
 			log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
 		}
-		s[1] = ipHashed
 
-		cli := s[2]
-		clihashed, err := hasher.StringSumWithSalt(cli, salt)
+		// s[2] contiene il cli del cliente.
+		s[2], err = hasher.StringSumWithSalt(s[2], salt)
 		if err != nil {
 			log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
 		}
-		s[2] = clihashed
-
 		//	fmt.Println(s[:]) // debug
 		records = append(records, strings.Join(s, "\t"))
 	}

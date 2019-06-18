@@ -50,21 +50,22 @@ func LocalKafkaProducer(ctx context.Context, s []string) (err error) {
 	defer conn.Close()
 	if err != nil {
 		log.Printf("Error impossibile aprire connessione a kafka\n")
-	}
-
-	// Imposta timeout per la scrittura sull'istanza kafka.
-	err = conn.SetWriteDeadline(time.Now().Add(2 * time.Second))
-	if err != nil {
-		log.Printf("Error Timeout connessione a kafka\n")
+		return err
 	}
 
 	// Produce record in kafka.
 	for _, line := range s {
+		// Imposta timeout per la scrittura sull'istanza kafka.
+		err = conn.SetWriteDeadline(time.Now().Add(60 * time.Second))
+		if err != nil {
+			log.Printf("Error Timeout connessione a kafka\n")
+			return err
+		}
 		_, err = conn.WriteMessages(
 			kafka.Message{Value: []byte(line)},
 		)
 		if err != nil {
-			log.Printf("Error produrre record in kafka\n")
+			log.Printf("Error Impossibile produrre record in kafka\n")
 		}
 	}
 

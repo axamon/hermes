@@ -77,37 +77,38 @@ func upload(w http.ResponseWriter, r *http.Request) {
 
 	jsn, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Print("errore reading body ", err, err.Error())
-		http.Error(w, http.StatusText(timedout), timedout)
-		return
+		log.Printf("Error Impossibile leggere il corpo della richiesta: %s\n", err.Error())
 	}
 
 	err = json.Unmarshal(jsn, &element)
 	if err != nil {
-		log.Fatal("Decoding error ", err, err.Error())
+		log.Printf("Error Impossibile decodificare: %s\n", err.Error())
 	}
 
-	// fmt.Println(element)
+	// fmt.Println(element) // debug
 
+	// Assegna valori alle tre variabili recuperandole da element.
 	filename, encoded, hashreceived := element.Name, element.Data, element.Hash
 
+	//
 	decoded, err := base64.StdEncoding.DecodeString(encoded)
-	checkErr("Problema nel decoding: ", err)
+	checkErr("ERROR Problema nel decoding: ", err)
 
-	//fmt.Println(filename, decoded)
+	// Apre il file in lettura.
 	f, err := os.Create("./" + filename)
-	checkErr("Problema nel creare il file: ", err)
+	checkErr("ERROR Problema nel creare il file: ", err)
 	defer f.Close()
 
+	// Scrive nel file il contenuto decodificato.
 	n, err := f.Write(decoded)
-	if err != nil {
-		log.Println(err.Error())
-	}
+	checkErr("ERROR Impossibile scerivere nel file: ", err)
 
+	// Forza chiusura file.
 	f.Close()
 
 	// log.Println(hashreceived) // debug
 
+	// Crea un hash di tutto il contenuto del file.
 	hash, err := hasher.FileWithSeed(filename, seed)
 	if err != nil {
 		log.Printf("ERROR Impossibile ricavare hash del file %s: %s\n", filename, err.Error())
@@ -115,13 +116,14 @@ func upload(w http.ResponseWriter, r *http.Request) {
 
 	// log.Println(hash) // debug
 
+	// Se l'hash creato equivale a quello ricevuto bene, altrimenti va in errore.
 	switch hashreceived == hash {
 	case false:
 		log.Printf("Errore nel trasferimento di: %s, hash non corrispondono.\n", filename)
 		w.Write([]byte("Errore nel trasferimento di: %s, hash non corrispondono"))
 	case true:
 		// log.Printf("Bella prova zi! %s trasferito bene. Gli hash coincidono.\n", filename)
-		log.Printf("INFO Salvato file %s, scritti: %d bytes", filename, n)
+		log.Printf("INFO Salvato file %s con successo, scritti: %d bytes\n", filename, n)
 	}
 
 	return

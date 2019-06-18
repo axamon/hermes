@@ -33,8 +33,8 @@ import (
 	"time"
 
 	"github.com/axamon/hermes/hasher"
+	"github.com/axamon/hermes/inoltralog"
 	"github.com/axamon/hermes/zipfile"
-	"github.com/segmentio/kafka-go"
 )
 
 var isCDN = regexp.MustCompile(`(?s)^\[.*\]\t[0-9]+\t\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\t[A-Z_]+\/\d{3}\t\d+\t[A-Z]+\t.*$`)
@@ -86,18 +86,10 @@ func CDN(ctx context.Context, logfile string) (err error) {
 
 		fmt.Println(s[:])
 
-		// to produce messages
-		topic := "logs"
-		partition := 0
-
-		conn, _ := kafka.DialLeader(context.Background(), "tcp", "localhost:9092", topic, partition)
-
-		conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-		conn.WriteMessages(
-			kafka.Message{Value: []byte(strings.Join(s, ";"))},
-		)
-
-		conn.Close()
+		err = inoltralog.LocalKafkaProducer(ctx, s)
+		if err != nil {
+			log.Printf("Error Impossibile salvare su kafka: %s\n", err.Error())
+		}
 	}
 
 	fmt.Println(n)

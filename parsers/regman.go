@@ -38,14 +38,15 @@ import (
 
 var isREGMAN = regexp.MustCompile(`(?m)^.*\;.*\;.*\;.*\;.*\;.*$`)
 
-// REGMAN è il parser dei log provenienti di regman.
+// REGMAN è il parser delle trap provenienti da REGMAN.
 func REGMAN(ctx context.Context, logfile string) (err error) {
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	// fmt.Println(logfile) // debug
 
-	// Apri file zippato in memoria
-	//reader, err := zipfile.ReadAll(ctx, logfile)
-
+	// Apri file zippato in memoria.
 	content, err := zipfile.ReadAllZIP(ctx, logfile)
 	if err != nil {
 		log.Printf("Error impossibile leggere file REGMAN %s, %s\n", logfile, err.Error())
@@ -68,7 +69,7 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 			return err
 		}
 
-		s, err := ElaboraREGMAN(ctx, line)
+		s, err := elaboraREGMAN(ctx, line)
 		if err != nil {
 			log.Printf("Error Impossibile elaborare REGMAN record: %s", s)
 		}
@@ -77,7 +78,7 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 			continue
 		}
 
-		// ! OFFUSCAMENTO CAMPI SENSIBILI
+		//! OFFUSCAMENTO CAMPI SENSIBILI
 		// s[1] contiente ip pubblico cliente.
 		s[1], err = hasher.StringSumWithSalt(s[1], salt)
 		if err != nil {
@@ -90,12 +91,15 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 			log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
 		}
 		//	fmt.Println(s[:]) // debug
+
+		// Viene aggiunto a records un record con i campi individuati
+		// separati da tab.
 		records = append(records, strings.Join(s, "\t"))
 	}
 
 	// Scrive uno per uno su standard output i record offuscati.
-	for _, line := range records {
-		fmt.Println(line)
+	for _, record := range records {
+		fmt.Println(record)
 	}
 
 	// Invia i records su kafka locale.
@@ -108,8 +112,10 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 	return err
 }
 
-// ElaboraREGMAN parsa i filelog provenienti da regman.
-func ElaboraREGMAN(ctx context.Context, line string) (s []string, err error) {
+func elaboraREGMAN(ctx context.Context, line string) (s []string, err error) {
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	// ricerca le fruzioni nell'intervallo temporale richiesto
 	// l'intervallo temporale inzia con l'inzio di una fruizione

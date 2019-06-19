@@ -41,6 +41,9 @@ var isAVS = regexp.MustCompile(`(?m)^.*\|.*\|.*$`)
 // AVS è il parser dei log provenienti da AVS
 func AVS(ctx context.Context, logfile string) (err error) {
 
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	// Apri file zippato in memoria
 	content, err := zipfile.ReadAllZIP(ctx, logfile)
 	if err != nil {
@@ -66,7 +69,7 @@ func AVS(ctx context.Context, logfile string) (err error) {
 
 		// fmt.Println(line) // debug
 
-		s, err := ElaboraAVS(ctx, line)
+		s, err := elaboraAVS(ctx, line)
 		if err != nil {
 			log.Printf("Error Impossibile elaborare fruzione per record: %s", s)
 		}
@@ -108,8 +111,10 @@ func AVS(ctx context.Context, logfile string) (err error) {
 	return err
 }
 
-// ElaboraAVS parsa i filelog provenienti da AVS.
-func ElaboraAVS(ctx context.Context, line string) (result []string, err error) {
+func elaboraAVS(ctx context.Context, line string) (result []string, err error) {
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	// Il separatore per i log AVS è "|"
 	s := strings.Split(line, "|")

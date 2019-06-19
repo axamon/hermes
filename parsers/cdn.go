@@ -42,6 +42,9 @@ var isCDN = regexp.MustCompile(`(?s)^\[.*\]\t[0-9]+\t\d{1,3}\.\d{1,3}\.\d{1,3}\.
 // CDN è il parser dei log provenienti dalla Content Delivery Network
 func CDN(ctx context.Context, logfile string) (err error) {
 
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	// fmt.Println(logfile) // debug
 
 	// Apri file zippato in memoria
@@ -68,7 +71,7 @@ func CDN(ctx context.Context, logfile string) (err error) {
 			return err
 		}
 
-		s, err := ElaboraCDN(ctx, line)
+		s, err := elaboraCDN(ctx, line)
 		if err != nil {
 			log.Printf("Error Impossibile elaborare fruzione per record: %s", s)
 		}
@@ -104,8 +107,10 @@ func CDN(ctx context.Context, logfile string) (err error) {
 	return err
 }
 
-// ElaboraCDN trasforma ogni record dei log.
-func ElaboraCDN(ctx context.Context, line string) (s []string, err error) {
+func elaboraCDN(ctx context.Context, line string) (s []string, err error) {
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	// ricerca le fruzioni nell'intervallo temporale richiesto
 	// l'intervallo temporale inzia con l'inzio di una fruizione

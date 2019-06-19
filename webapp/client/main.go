@@ -26,7 +26,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
@@ -56,69 +55,87 @@ func main() {
 
 	flag.Parse()
 
-	// Crea il contesto.
-	ctx := context.Background()
+	// Crea il contesto padre.
+	ctx, cancelmain := context.WithCancel(context.Background())
+	defer cancelmain()
 
+	// Recupera dal flag il file da inviare.
 	filedainviare := *file
 
+	// Verifica che il file esista.
 	fi, err := os.Stat(filedainviare)
 	if err != nil {
-		log.Println(err.Error())
-	}
-
-	// in MB
-	sizefile := fi.Size() / 1024 / 1024
-	if sizefile > 100 {
-		log.Printf("Error File %s troppo grande: %v MB\n", filedainviare, sizefile)
+		log.Printf("ERROR file %s non trovato: %s\n", filedainviare, err.Error())
 		return
 	}
 
-	// Verifica che il server remoto sia raggiungibile
-	_, err = net.DialTimeout("tcp", *remoteAddr, time.Duration(3*time.Second))
+	// Dimensione file in MB.
+	sizefile := fi.Size() / 1024 / 1024
+
+	// Se il file è più grande di  MB esce.
+	maxsize := int64(100)
+	if sizefile > maxsize {
+		log.Printf("ERROR Le dimensioni del file %s superano il livello massimo: %v > %d MB\n", filedainviare, sizefile, maxsize)
+		return
+	}
+
+	// Verifica che il server di upload remoto sia raggiungibile.
+	testConn, err := net.DialTimeout("tcp", *remoteAddr, time.Duration(3*time.Second))
 	if err != nil {
 		log.Printf("Server remoto non raggiungibile, error: %s\n", err.Error())
 		return
 	}
 
+	// Forza la chiusura della connessione di test.
+	testConn.Close()
+
 	// fmt.Println(*remoteAddr) // debug
+
+	// Crea la URL da contattare con l'endpoint specifico per l'upload.
 	remoteURL := "http://" + *remoteAddr + "/upload" // ! TODO CAMBIARE IN HTTPS
 
+	// Imposta il timeout della connessione recuperandolo dal flag.
 	timeout := time.Duration(*timout) * time.Second
 
+	// Avvia l'upload del file.
 	err = upload(ctx, remoteURL, filedainviare, timeout)
 	if err != nil {
-		log.Println(err.Error())
+		log.Printf("ERROR upload file %s non riuscito: %s\n", filedainviare, err.Error())
 	}
+
+	return
 }
 
 func upload(ctx context.Context, url, filedainviare string, timeout time.Duration) (err error) {
 
-	// ! timeout Massimo tempo per terminare upload di un file
+	//! timeout Massimo tempo per terminare upload del file
 	ctx, cancelUpload := context.WithTimeout(ctx, timeout)
 	defer cancelUpload()
 
 	select {
+	// Se impiega troppo tempo.
 	case <-ctx.Done():
-		fmt.Println(ctx.Err()) // prints "context deadline exceeded"
+		log.Printf("ERROR Ecceduto tempo massimo per upload file: %s\n", ctx.Err()) // prints "context deadline exceeded"
 		return
+		// Se tutto procede come si deve.
 	default:
-		// Apre file da inviare.
+		// Apre file da inviare, non importa se zippato o meno.
 		file, err := os.Open(filedainviare)
 		if err != nil {
-			log.Printf("impossible aprire file: %s errore: %s\n", filedainviare, err.Error())
+			log.Printf("ERROR Impossible aprire file: %s errore: %s\n", filedainviare, err.Error())
 		}
 		defer file.Close()
 
-		// Legge il file in memoria.
+		// Salva il contenuto del file in memoria.
 		data, err := ioutil.ReadAll(file)
 		if err != nil {
-			log.Println(err.Error())
+			log.Printf("ERROR Impossibile salvare contenuto file in memeoria: %s\n", err.Error())
 		}
 
 		// Encoda il file in base64.
 		encoded := base64.StdEncoding.EncodeToString(data)
 		if err != nil {
-			log.Println(err.Error())
+			log.Printf("ERROR Impossibile encodare il contenuto file: %s\n", err.Error())
 		}
 
 		// Calcola hash del file con seed.
@@ -131,13 +148,16 @@ func upload(ctx context.Context, url, filedainviare string, timeout time.Duratio
 
 		// Effettua il marshalling in json dai dati secondo il type info.
 		kvPairs, err := json.Marshal(info{Name: filedainviare, Data: encoded, Hash: hash})
+		if err != nil {
+			log.Printf("ERROR Impossibile efffettuare marshalling del file %s encodato: %s\n", filedainviare, err.Error())
+		}
 
 		// fmt.Printf("Sending JSON string '%s'\n", string(kvPairs)) // debug
 
 		// Crea la web request in POST aggiungendo il file encodato.
 		req, err := http.NewRequest("POST", url, bytes.NewBuffer(kvPairs))
 		if err != nil {
-			log.Printf(err.Error())
+			log.Printf("ERROR Impossibile creare web request di tipo POST: %s\n", err.Error())
 		}
 
 		// Aggiunge il contesto alla richiesta.
@@ -146,10 +166,10 @@ func upload(ctx context.Context, url, filedainviare string, timeout time.Duratio
 		// Aggiunge header per processare json.
 		req.Header.Set("Content-Type", "application/json")
 
-		// Aggiunge sicurezza
+		// Aggiunge autenticazione per il server remoto.
 		req.SetBasicAuth(*userid, *password)
 
-		// Crea client http
+		// Crea client http.
 		client := &http.Client{}
 
 		// Invia la web request.
@@ -160,7 +180,7 @@ func upload(ctx context.Context, url, filedainviare string, timeout time.Duratio
 		}
 
 		// Chiude il body della web response come da specifica.
-		//defer resp.Body.Close()
+		defer resp.Body.Close()
 
 		//body, err := ioutil.ReadAll(resp.Body)
 		//fmt.Println("Response: ", string(body))

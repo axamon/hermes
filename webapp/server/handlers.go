@@ -40,11 +40,12 @@ func checkErr(msg string, err error) {
 }
 
 func version(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Versione: 2.0\nAutore: Alberto Bregliano")
+	fmt.Fprintf(w, "Versione: 2.0\nAutore: Alberto Bregliano\n")
 }
 
 func upload(w http.ResponseWriter, r *http.Request) {
 
+	// In caso di panico recupera senza killare il server.
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("Recovered in f", r)
@@ -52,19 +53,25 @@ func upload(w http.ResponseWriter, r *http.Request) {
 
 	}()
 
+	// Recupera i dati user e pass di autorizzazione.
 	auth := r.Header.Get("Authorization")
 
+	// Se i dati di autorizzazione sono assenti chiude.
 	if !strings.HasPrefix(auth, "Basic ") {
 		log.Print("Invalid authorization:", auth)
 		http.Error(w, http.StatusText(unauth), unauth)
 		return
 	}
+
+	// Recupera i dati di autorizzazione.
 	up, err := base64.StdEncoding.DecodeString(auth[6:])
 	if err != nil {
 		log.Print("authorization decode error:", err)
 		http.Error(w, http.StatusText(unauth), unauth)
 		return
 	}
+
+	// Verifica i dati di autorizzazione.
 	if string(up) != userPass {
 		log.Print("invalid username:password: ", string(up))
 		http.Error(w, http.StatusText(unauth), unauth)
@@ -73,16 +80,18 @@ func upload(w http.ResponseWriter, r *http.Request) {
 	//io.WriteString(w, "Goodbye, World!")
 	//log.Println(r.Method)
 
+	// Crea una istanza di info per salvare i dati in arrivo.
 	element := info{}
 
 	jsn, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Printf("Error Impossibile leggere il corpo della richiesta: %s\n", err.Error())
+		log.Printf("ERROR Impossibile leggere il corpo della richiesta: %s\n", err.Error())
 	}
 
+	// Salva dentro element i dati.
 	err = json.Unmarshal(jsn, &element)
 	if err != nil {
-		log.Printf("Error Impossibile decodificare: %s\n", err.Error())
+		log.Printf("ERROR Impossibile decodificare: %s\n", err.Error())
 	}
 
 	// fmt.Println(element) // debug
@@ -90,11 +99,11 @@ func upload(w http.ResponseWriter, r *http.Request) {
 	// Assegna valori alle tre variabili recuperandole da element.
 	filename, encoded, hashreceived := element.Name, element.Data, element.Hash
 
-	//
+	// Decodifica i dati del file.
 	decoded, err := base64.StdEncoding.DecodeString(encoded)
 	checkErr("ERROR Problema nel decoding: ", err)
 
-	// Apre il file in lettura.
+	// Crea il file dove salvare i dati.
 	f, err := os.Create("./" + filename)
 	checkErr("ERROR Problema nel creare il file: ", err)
 	defer f.Close()
@@ -103,7 +112,7 @@ func upload(w http.ResponseWriter, r *http.Request) {
 	n, err := f.Write(decoded)
 	checkErr("ERROR Impossibile scerivere nel file: ", err)
 
-	// Forza chiusura file.
+	// Forza chiusura del file per eseguire verifica di checksum.
 	f.Close()
 
 	// log.Println(hashreceived) // debug
@@ -120,9 +129,10 @@ func upload(w http.ResponseWriter, r *http.Request) {
 	switch hashreceived == hash {
 	case false:
 		log.Printf("Errore nel trasferimento di: %s, hash non corrispondono.\n", filename)
-		w.Write([]byte("Errore nel trasferimento di: %s, hash non corrispondono"))
+		http.Error(w, http.StatusText(500), 500)
+		w.Write([]byte("Errore nel trasferimento, hash non corrispondono"))
 	case true:
-		// log.Printf("Bella prova zi! %s trasferito bene. Gli hash coincidono.\n", filename)
+		w.Write([]byte("Trasferimento OK, hash corrispondono"))
 		log.Printf("INFO Salvato file %s con successo, scritti: %d bytes\n", filename, n)
 	}
 

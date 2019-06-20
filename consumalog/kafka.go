@@ -9,7 +9,7 @@ import (
 )
 
 // KafkaLocalConsumer consuma i messaggi in kafka.
-func KafkaLocalConsumer(ctx context.Context) (data []byte, err error) {
+func KafkaLocalConsumer(ctx context.Context, oldoffset int64) (data []byte, offset int64, err error) {
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -21,6 +21,7 @@ func KafkaLocalConsumer(ctx context.Context) (data []byte, err error) {
 
 	conn.SetReadDeadline(time.Now().Add(10 * time.Second))
 	defer conn.Close()
+	conn.Seek(oldoffset, 0)
 
 	batch := conn.ReadBatch(10e3, 1e6) // fetch 10KB min, 1MB max
 	defer batch.Close()
@@ -34,5 +35,5 @@ func KafkaLocalConsumer(ctx context.Context) (data []byte, err error) {
 		fmt.Println(string(b))
 	}
 
-	return
+	return b, batch.Offset(), err
 }

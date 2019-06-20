@@ -23,7 +23,7 @@ func KafkaLocalConsumer(ctx context.Context, oldoffset int64) (data []byte, offs
 	defer conn.Close()
 	conn.Seek(oldoffset, 0)
 
-	batch := conn.ReadBatch(10e3, 1e6) // fetch 10KB min, 1MB max
+	batch := conn.ReadBatch(10e3, 10e6) // fetch 10KB min, 1MB max
 	defer batch.Close()
 
 	b := make([]byte, 10e3) // 10KB max per message

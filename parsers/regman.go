@@ -79,14 +79,14 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 		}
 
 		//! OFFUSCAMENTO CAMPI SENSIBILI
-		// s[1] contiente ip pubblico cliente.
-		s[1], err = hasher.StringSumWithSalt(s[1], salt)
+		// s[2] contiente ip pubblico cliente.
+		s[2], err = hasher.StringSumWithSalt(s[2], salt)
 		if err != nil {
 			log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
 		}
 
-		// s[2] contiene il cli del cliente.
-		s[2], err = hasher.StringSumWithSalt(s[2], salt)
+		// s[3] contiene il cli del cliente.
+		s[3], err = hasher.StringSumWithSalt(s[3], salt)
 		if err != nil {
 			log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
 		}
@@ -159,7 +159,7 @@ func elaboraREGMAN(ctx context.Context, line string) (s []string, err error) {
 
 	//ingestafruizioni(Hash, clientip, idvideoteca, idaps, edgeip, giorno, orario, speed)
 
-	result := append(giornoq, ipregman, cli, s[0], s[5])
+	result := append(giornoq, "REG", ipregman, cli, s[0], s[5])
 
 	return result, err
 }

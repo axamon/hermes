@@ -81,13 +81,13 @@ func AVS(ctx context.Context, logfile string) (err error) {
 		// ! OFFUSCAMENTO CAMPI SENSIBILI
 
 		// Effettua hash della mail dell'utente.
-		s[3], err = hasher.StringSumWithSalt(s[3], salt)
+		s[4], err = hasher.StringSumWithSalt(s[4], salt)
 		if err != nil {
 			log.Printf("Error Hashing in errore: %s\n", err.Error())
 		}
 
 		// Effettua hash del cli utente.
-		s[1], err = hasher.StringSumWithSalt(s[1], salt)
+		s[2], err = hasher.StringSumWithSalt(s[2], salt)
 		if err != nil {
 			log.Printf("Error Hashing in errore: %s\n", err.Error())
 		}
@@ -149,7 +149,7 @@ func elaboraAVS(ctx context.Context, line string) (result []string, err error) {
 
 	//ingestafruizioni(Hash, clientip, idvideoteca, idaps, edgeip, giorno, orario, speed)
 
-	result = append(giornoq, cli, idvideoteca, mailcliente)
+	result = append(giornoq, "AVS", cli, idvideoteca, mailcliente)
 
 	return result, err
 }

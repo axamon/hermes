@@ -64,10 +64,10 @@ func LocalKafkaProducer(ctx context.Context, s []string) (err error) {
 		}
 	}()
 
-	// Sceglie il topic su cui scirvere.
+	// Sceglie il topic su cui scirvere,
 	topic := "logs"
 
-	// Seclie la partizione Kafka su cui scrivere.
+	// Sceglie la partizione Kafka su cui scrivere.
 	partition := 0
 
 	// Configura la connessione.

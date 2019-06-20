@@ -8,11 +8,14 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-// KafkaConsume consuma i messaggi in kafka.
-func KafkaConsume(ctx context.Context, topic string, partition int) (data []byte, err error) {
+// KafkaLocalConsumer consuma i messaggi in kafka.
+func KafkaLocalConsumer(ctx context.Context) (data []byte, err error) {
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+
+	topic := "logs"
+	partition := 0
 
 	conn, _ := kafka.DialLeader(ctx, "tcp", "localhost:9092", topic, partition)
 

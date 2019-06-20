@@ -9,12 +9,11 @@ import (
 )
 
 // KafkaLocalConsumer consuma i messaggi in kafka.
-func KafkaLocalConsumer(ctx context.Context, oldoffset int64) (data []byte, offset int64, err error) {
+func KafkaLocalConsumer(ctx context.Context, topic string, oldoffset int64) (data []byte, offset int64, err error) {
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	topic := "logs"
 	partition := 0
 
 	conn, _ := kafka.DialLeader(ctx, "tcp", "localhost:9092", topic, partition)

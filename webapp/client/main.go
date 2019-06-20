@@ -182,7 +182,6 @@ func upload(ctx context.Context, url, filedainviare string, timeout time.Duratio
 		// Chiude il body della web response come da specifica.
 		defer resp.Body.Close()
 
-		//body, err := ioutil.ReadAll(resp.Body)
 		//fmt.Println("Response: ", string(body))
 
 		switch resp.StatusCode == 200 {
@@ -190,6 +189,7 @@ func upload(ctx context.Context, url, filedainviare string, timeout time.Duratio
 			log.Printf("INFO File %s trasferito correttamente\n", filedainviare)
 		case false:
 			log.Printf("ERROR Trasferimento del file %s non riuscito: %s\n", filedainviare, resp.Status)
+
 		}
 
 	}

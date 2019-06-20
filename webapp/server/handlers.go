@@ -95,6 +95,7 @@ func upload(w http.ResponseWriter, r *http.Request) {
 		jsn, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			log.Printf("ERROR Impossibile leggere il corpo della richiesta: %s\n", err.Error())
+			return
 		}
 
 		// Salva dentro element i dati.
@@ -140,6 +141,7 @@ func upload(w http.ResponseWriter, r *http.Request) {
 			log.Printf("ERROR trasferimento di %s non riuscito, hash non corrispondono.\n", filename)
 			http.Error(w, http.StatusText(500), 500)
 			w.Write([]byte("Errore nel trasferimento, hash non corrispondono"))
+			cancel()
 		case true:
 			w.Write([]byte("Trasferimento OK, hash corrispondono"))
 			log.Printf("INFO Salvato file %s con successo, scritti: %d bytes\n", filename, n)

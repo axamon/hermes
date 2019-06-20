@@ -57,7 +57,9 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 
 	scan := bufio.NewScanner(r)
 
-	var records []string
+	var records, s []string
+	var topic string
+
 	n := 0
 	for scan.Scan() {
 		n++
@@ -69,7 +71,7 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 			return err
 		}
 
-		s, err := elaboraREGMAN(ctx, line)
+		topic, s, err = elaboraREGMAN(ctx, line)
 		if err != nil {
 			log.Printf("Error Impossibile elaborare REGMAN record: %s", s)
 		}
@@ -79,14 +81,14 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 		}
 
 		//! OFFUSCAMENTO CAMPI SENSIBILI
-		// s[2] contiente ip pubblico cliente.
-		s[2], err = hasher.StringSumWithSalt(s[2], salt)
+		// s[1] contiente ip pubblico cliente.
+		s[1], err = hasher.StringSumWithSalt(s[1], salt)
 		if err != nil {
 			log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
 		}
 
-		// s[3] contiene il cli del cliente.
-		s[3], err = hasher.StringSumWithSalt(s[3], salt)
+		// s[2] contiene il cli del cliente.
+		s[2], err = hasher.StringSumWithSalt(s[2], salt)
 		if err != nil {
 			log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
 		}
@@ -103,7 +105,7 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 	}
 
 	// Invia i records su kafka locale.
-	err = inoltralog.LocalKafkaProducer(ctx, records)
+	err = inoltralog.LocalKafkaProducer(ctx, topic, records)
 	if err != nil {
 		log.Printf("Error Impossibile salvare su kafka: %s\n", err.Error())
 	}
@@ -112,7 +114,7 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 	return err
 }
 
-func elaboraREGMAN(ctx context.Context, line string) (s []string, err error) {
+func elaboraREGMAN(ctx context.Context, line string) (topic string, result []string, err error) {
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -123,12 +125,12 @@ func elaboraREGMAN(ctx context.Context, line string) (s []string, err error) {
 	// fmt.Println(line)
 	if !isREGMAN.MatchString(line) {
 		err := fmt.Errorf("Error recordnon di tipo REGMAN: %s", line)
-		return nil, err
+		return "", nil, err
 	}
 
 	// Splitta la linea nei supi fields.
 	// Il separatore per i log REGMAN è ";"
-	s = strings.Split(line, ";")
+	s := strings.Split(line, ";")
 
 	t, err := time.Parse("2006-01-02 15:04:05", s[2])
 	if err != nil {
@@ -148,7 +150,7 @@ func elaboraREGMAN(ctx context.Context, line string) (s []string, err error) {
 	//epoch := t.Format(time.RFC1123Z)
 
 	// Crea il campo giornoq per integrare i log al quarto d'ora.
-	giornoq := []string{t.Format("20060102") + "q" + quartooraStr}
+	giornoq := t.Format("20060102") + "q" + quartooraStr
 
 	//Time := t.Format("200601021504") //idem con patate questo è lo stracazzuto ISO8601 meglio c'è solo epoch
 	//fmt.Println(Time)
@@ -159,7 +161,7 @@ func elaboraREGMAN(ctx context.Context, line string) (s []string, err error) {
 
 	//ingestafruizioni(Hash, clientip, idvideoteca, idaps, edgeip, giorno, orario, speed)
 
-	result := append(giornoq, "REG", ipregman, cli, s[0], s[5])
+	result = append(result, "REG", ipregman, cli, s[0], s[5])
 
-	return result, err
+	return giornoq, result, err
 }

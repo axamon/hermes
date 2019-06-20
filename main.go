@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 
-	"github.com/axamon/hermes/inoltralog"
 	"github.com/axamon/hermes/parsers"
 )
 
@@ -19,13 +17,13 @@ func main() {
 	// Così evitiamo problemi con l'istanzioamento degli errori :)
 	var err error
 
-	// Verifica se l'instaza locale di Kakfa è raggiungile.
-	err = inoltralog.VerificaLocalKafka(ctx)
-	if err != nil {
-		log.Printf("ERROR Attenzione istanza locale di Kafka non raggiugibile\n")
-		time.Sleep(5 * time.Second)
-		fmt.Println("Ok proseguo lo stesso!")
-	}
+	// // Verifica se l'instaza locale di Kakfa è raggiungile.
+	// err = inoltralog.VerificaLocalKafka(ctx)
+	// if err != nil {
+	// 	log.Printf("ERROR Attenzione istanza locale di Kafka non raggiugibile\n")
+	// 	time.Sleep(5 * time.Second)
+	// 	fmt.Println("Ok proseguo lo stesso!")
+	// }
 
 	logfile := os.Args[1]
 

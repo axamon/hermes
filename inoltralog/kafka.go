@@ -52,7 +52,7 @@ func VerificaLocalKafka(ctx context.Context) (err error) {
 }
 
 // LocalKafkaProducer invia records a una istanza kafka locale.
-func LocalKafkaProducer(ctx context.Context, s []string) (err error) {
+func LocalKafkaProducer(ctx context.Context, topic string, s []string) (err error) {
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -63,9 +63,6 @@ func LocalKafkaProducer(ctx context.Context, s []string) (err error) {
 			fmt.Println("Recovered in f", r)
 		}
 	}()
-
-	// Sceglie il topic su cui scirvere,
-	topic := "logs"
 
 	// Sceglie la partizione Kafka su cui scrivere.
 	partition := 0

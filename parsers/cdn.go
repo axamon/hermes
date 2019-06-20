@@ -59,7 +59,9 @@ func CDN(ctx context.Context, logfile string) (err error) {
 
 	scan := bufio.NewScanner(r)
 
-	var records []string
+	var records, s []string
+	var topic string
+
 	n := 0
 	for scan.Scan() {
 		n++
@@ -71,7 +73,7 @@ func CDN(ctx context.Context, logfile string) (err error) {
 			return err
 		}
 
-		s, err := elaboraCDN(ctx, line)
+		topic, s, err = elaboraCDN(ctx, line)
 		if err != nil {
 			log.Printf("Error Impossibile elaborare fruzione per record: %s", s)
 		}
@@ -81,8 +83,8 @@ func CDN(ctx context.Context, logfile string) (err error) {
 		}
 
 		// ! OFFUSCAMENTO IP PUBBLICO CLIENTE
-		// s[3] è l'ip pubblico del cliente da offuscare
-		s[3], err = hasher.StringSumWithSalt(s[3], salt)
+		// s[2] è l'ip pubblico del cliente da offuscare
+		s[2], err = hasher.StringSumWithSalt(s[2], salt)
 		if err != nil {
 			log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
 		}
@@ -98,7 +100,7 @@ func CDN(ctx context.Context, logfile string) (err error) {
 	}
 
 	// Invia i records su kafka locale.
-	err = inoltralog.LocalKafkaProducer(ctx, records)
+	err = inoltralog.LocalKafkaProducer(ctx, topic, records)
 	if err != nil {
 		log.Printf("Error Impossibile salvare su kafka: %s\n", err.Error())
 	}
@@ -107,7 +109,7 @@ func CDN(ctx context.Context, logfile string) (err error) {
 	return err
 }
 
-func elaboraCDN(ctx context.Context, line string) (s []string, err error) {
+func elaboraCDN(ctx context.Context, line string) (topic string, result []string, err error) {
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -118,12 +120,12 @@ func elaboraCDN(ctx context.Context, line string) (s []string, err error) {
 	// fmt.Println(line)
 	if !isCDN.MatchString(line) {
 		err := fmt.Errorf("Error record non di tipo CDN: %s", line)
-		return nil, err
+		return "", nil, err
 	}
 
 	// Splitta la linea nei suoi fields,
 	// il separatore per i log CDN è il tab: \t
-	s = strings.Split(line, "\t")
+	s := strings.Split(line, "\t")
 
 	// Parsa la URL nelle sue componenti.
 	u, err := url.Parse(s[6])
@@ -159,7 +161,7 @@ func elaboraCDN(ctx context.Context, line string) (s []string, err error) {
 	var speed, tts, bytes float64
 
 	// Crea il campo giornoq per integrare i log al quarto d'ora.
-	giornoq := []string{t.Format("20060102") + "q" + quartooraStr}
+	giornoq := t.Format("20060102") + "q" + quartooraStr
 
 	tts, err = strconv.ParseFloat(s[1], 8)
 	if err != nil {
@@ -198,7 +200,7 @@ func elaboraCDN(ctx context.Context, line string) (s []string, err error) {
 	// Tratta solo i chunck di tipo video // ! da verificare se va bene o no!
 	if ok := !strings.Contains(Urlpath, "video="); ok == true { //solo i chunk video
 
-		return nil, nil
+		return "", nil, nil
 	}
 
 	// Recupera il valore univoco del video.
@@ -227,6 +229,6 @@ func elaboraCDN(ctx context.Context, line string) (s []string, err error) {
 
 	//s = append(s, Time, Hashfruizione, idaps, idvideoteca, status, speedStr, quartooraStr, IDipq)
 
-	result := append(giornoq, "CDN", Hashfruizione, clientip, idvideoteca, status, speedStr)
-	return result, err
+	result = append(result, "CDN", Hashfruizione, clientip, idvideoteca, status, speedStr)
+	return giornoq, result, err
 }

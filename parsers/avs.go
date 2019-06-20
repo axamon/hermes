@@ -55,7 +55,8 @@ func AVS(ctx context.Context, logfile string) (err error) {
 
 	scan := bufio.NewScanner(r)
 
-	var records []string
+	var records, s []string
+	var topic string
 	n := 0
 	for scan.Scan() {
 		n++
@@ -69,7 +70,7 @@ func AVS(ctx context.Context, logfile string) (err error) {
 
 		// fmt.Println(line) // debug
 
-		s, err := elaboraAVS(ctx, line)
+		topic, s, err = elaboraAVS(ctx, line)
 		if err != nil {
 			log.Printf("Error Impossibile elaborare fruzione per record: %s", s)
 		}
@@ -81,13 +82,13 @@ func AVS(ctx context.Context, logfile string) (err error) {
 		// ! OFFUSCAMENTO CAMPI SENSIBILI
 
 		// Effettua hash della mail dell'utente.
-		s[4], err = hasher.StringSumWithSalt(s[4], salt)
+		s[3], err = hasher.StringSumWithSalt(s[3], salt)
 		if err != nil {
 			log.Printf("Error Hashing in errore: %s\n", err.Error())
 		}
 
 		// Effettua hash del cli utente.
-		s[2], err = hasher.StringSumWithSalt(s[2], salt)
+		s[1], err = hasher.StringSumWithSalt(s[1], salt)
 		if err != nil {
 			log.Printf("Error Hashing in errore: %s\n", err.Error())
 		}
@@ -102,7 +103,7 @@ func AVS(ctx context.Context, logfile string) (err error) {
 	}
 
 	// Invia i records su kafka locale.
-	err = inoltralog.LocalKafkaProducer(ctx, records)
+	err = inoltralog.LocalKafkaProducer(ctx, topic, records)
 	if err != nil {
 		log.Printf("Error Impossibile salvare su kafka: %s\n", err.Error())
 	}
@@ -111,7 +112,7 @@ func AVS(ctx context.Context, logfile string) (err error) {
 	return err
 }
 
-func elaboraAVS(ctx context.Context, line string) (result []string, err error) {
+func elaboraAVS(ctx context.Context, line string) (topic string, result []string, err error) {
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -139,7 +140,7 @@ func elaboraAVS(ctx context.Context, line string) (result []string, err error) {
 	//fmt.Println(Time)
 
 	// Crea il campo giornoq per integrare i log al quarto d'ora.
-	giornoq := []string{t.Format("20060102") + "q" + quartooraStr}
+	giornoq := t.Format("20060102") + "q" + quartooraStr
 
 	cli := s[2]
 
@@ -149,7 +150,7 @@ func elaboraAVS(ctx context.Context, line string) (result []string, err error) {
 
 	//ingestafruizioni(Hash, clientip, idvideoteca, idaps, edgeip, giorno, orario, speed)
 
-	result = append(giornoq, "AVS", cli, idvideoteca, mailcliente)
+	result = append(result, "AVS", cli, idvideoteca, mailcliente)
 
-	return result, err
+	return giornoq, result, err
 }

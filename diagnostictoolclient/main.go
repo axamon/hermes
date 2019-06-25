@@ -11,9 +11,6 @@ import (
 
 const (
 	endpoint = "https://gegup.telecomitalia.local:8443/DiagnosticTool/api.php?method=DiagnosticTool&sincrono=N&format=json&tgu="
-
-	username = "multimedia"
-	passwd   = "Mult1med1a!"
 )
 
 func main() {
@@ -31,7 +28,11 @@ func main() {
 	}
 
 	req.WithContext(ctx)
-	req.SetBasicAuth(username, passwd)
+
+	username := os.Getenv("DiagnosticToolUsername")
+	password := os.Getenv("DiagnosticToolPassoword")
+
+	req.SetBasicAuth(username, password)
 
 	resp, err := client.Do(req)
 	if err != nil {

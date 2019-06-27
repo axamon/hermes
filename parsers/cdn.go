@@ -41,11 +41,12 @@ import (
 
 var isCDN = regexp.MustCompile(`(?s)^\[.*\]\t[0-9]+\t\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\t[A-Z_]+\/\d{3}\t\d+\t[A-Z]+\t.*$`)
 
-var chanRecords = make(chan *[]string)
+//var chanRecords = make(chan *[]string)
 
 var n int
+var records []string
 
-var wg sync.WaitGroup
+var l sync.Mutex
 
 // CDN è il parser dei log provenienti dalla Content Delivery Network
 func CDN(ctx context.Context, logfile string) (err error) {
@@ -53,7 +54,7 @@ func CDN(ctx context.Context, logfile string) (err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	var done = make(chan bool)
+	//	var done = make(chan bool)
 	// fmt.Println(logfile) // debug
 
 	// Apri file zippato in memoria
@@ -68,29 +69,29 @@ func CDN(ctx context.Context, logfile string) (err error) {
 
 	scan := bufio.NewScanner(r)
 
-	var records []string
 	//var topic string
 
-	go func() {
-		select {
-		case record := <-chanRecords:
-			//fmt.Println(s[:]) // debug
-			s := *record
-			if len(s) < 2 {
-				break
-			}
-			// ! OFFUSCAMENTO IP PUBBLICO CLIENTE
-			// s[2] è l'ip pubblico del cliente da offuscare
-			s[2], err = hasher.StringSumWithSalt(s[2], salt)
-			if err != nil {
-				log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
-			}
-			records = append(records, strings.Join(s, ","))
-		case <-done:
-			break
-		}
-		return
-	}()
+	// go func() {
+	// 	select {
+	// 	case record := <-chanRecords:
+	// 		//fmt.Println(s[:]) // debug
+	// 		s := *record
+	// 		if len(s) < 2 {
+	// 			break
+	// 		}
+	// 		// ! OFFUSCAMENTO IP PUBBLICO CLIENTE
+	// 		// s[2] è l'ip pubblico del cliente da offuscare
+	// 		s[2], err = hasher.StringSumWithSalt(s[2], salt)
+	// 		if err != nil {
+	// 			log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
+	// 		}
+	// 		records = append(records, strings.Join(s, ","))
+	// 	case <-done:
+	// 		break
+	// 	}
+	// 	return
+	// }()vvkidtbcjujhlllthgcbdvjdiktgufbcufkntudvrlli
+	var wg sync.WaitGroup
 
 	for scan.Scan() {
 		n++
@@ -102,9 +103,8 @@ func CDN(ctx context.Context, logfile string) (err error) {
 		// 	err := fmt.Errorf("Error logfile %s non di tipo CDN", logfile)
 		// 	return err
 		// }
-		wg.Add(1)
 
-		go elaboraCDN(ctx, &line)
+		go elaboraCDN(ctx, &line, &wg)
 
 		// if err != nil {
 		// 	log.Printf("Error Impossibile elaborare fruzione per record: %s", s)
@@ -113,7 +113,7 @@ func CDN(ctx context.Context, logfile string) (err error) {
 	}
 
 	wg.Wait()
-	done <- true
+	//done <- true
 	// Apre nuovo file per salvare dati elaborati.
 	newFile := strings.Split(logfile, ".csv.gz")[0] + ".offuscato.csv.gz"
 	// fmt.Println(newFile)
@@ -154,11 +154,13 @@ func CDN(ctx context.Context, logfile string) (err error) {
 	return err
 }
 
-func elaboraCDN(ctx context.Context, line *string) { //(topic string, result []string, err error) {
-
+func elaboraCDN(ctx context.Context, line *string, wg *sync.WaitGroup) { //(topic string, result []string, err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+
+	wg.Add(1)
 	defer wg.Done()
+
 	// ricerca le fruzioni nell'intervallo temporale richiesto
 	// l'intervallo temporale inzia con l'inzio di una fruizione
 
@@ -275,8 +277,23 @@ func elaboraCDN(ctx context.Context, line *string) { //(topic string, result []s
 	//ingestafruizioni(Hash, clientip, idvideoteca, idaps, edgeip, giorno, orario, speed)
 
 	//s = append(s, Time, Hashfruizione, idaps, idvideoteca, status, speedStr, quartooraStr, IDipq)
-	var result []string
-	result = append(result, giornoq, Hashfruizione, clientip, idvideoteca, status, s[1], s[4])
-	chanRecords <- &result
+	var str []string
+	str = append(str, giornoq, Hashfruizione, clientip, idvideoteca, status, s[1], s[4])
+
+	if len(str) < 2 {
+		return
+	}
+	// ! OFFUSCAMENTO IP PUBBLICO CLIENTE
+	// s[2] è l'ip pubblico del cliente da offuscare
+	str[2], err = hasher.StringSumWithSalt(str[2], salt)
+	if err != nil {
+		log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
+	}
+
+	l.Lock()
+	records = append(records, strings.Join(str, ","))
+	l.Unlock()
+
+	//chanRecords <- &result
 	return
 }

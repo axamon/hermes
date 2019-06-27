@@ -36,7 +36,7 @@ import (
 	"github.com/axamon/hermes/zipfile"
 )
 
-var isREGMAN = regexp.MustCompile(`(?m)^.*\;.*\;.*\;.*\;.*\;.*$`)
+var isREGMAN = regexp.MustCompile(`(?m)^.*\s\d{12}\s.*$`)
 
 // REGMAN è il parser delle trap provenienti da REGMAN.
 func REGMAN(ctx context.Context, logfile string) (err error) {
@@ -47,7 +47,7 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 	// fmt.Println(logfile) // debug
 
 	// Apri file zippato in memoria.
-	content, err := zipfile.ReadAllZIP(ctx, logfile)
+	content, err := zipfile.ReadAllGZ(ctx, logfile)
 	if err != nil {
 		log.Printf("Error impossibile leggere file REGMAN %s, %s\n", logfile, err.Error())
 		return err
@@ -63,6 +63,12 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 	n := 0
 	for scan.Scan() {
 		n++
+
+		// Salta l'header
+		if n == 1 {
+			continue
+		}
+
 		line := scan.Text()
 
 		// Verifica che logfile sia di tipo regman.
@@ -92,7 +98,7 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 		if err != nil {
 			log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
 		}
-		//	fmt.Println(s[:]) // debug
+		fmt.Println(s[:]) // debug
 
 		// Viene aggiunto a records un record con i campi individuati
 		// separati da tab.
@@ -130,7 +136,7 @@ func elaboraREGMAN(ctx context.Context, line string) (topic string, result []str
 
 	// Splitta la linea nei supi fields.
 	// Il separatore per i log REGMAN è ";"
-	s := strings.Split(line, ";")
+	s := strings.Split(line, " ")
 
 	t, err := time.Parse("2006-01-02 15:04:05", s[2])
 	if err != nil {

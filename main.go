@@ -40,7 +40,7 @@ func main() {
 
 	err = parsers.AVS(ctx, logfile)
 	if err != nil {
-		log.Printf("Error Impossibile parsare file REGMAN %s: %s\n", logfile, err.Error())
+		log.Printf("Error Impossibile parsare file AVS %s: %s\n", logfile, err.Error())
 	}
 
 }

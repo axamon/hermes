@@ -89,7 +89,7 @@ func CDN(ctx context.Context, logfile string) (err error) {
 			log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
 		}
 
-		//	fmt.Println(s[:]) // debug
+		//fmt.Println(s[:]) // debug
 		records = append(records, strings.Join(s, "\t"))
 
 	}
@@ -198,11 +198,13 @@ func elaboraCDN(ctx context.Context, line string) (topic string, result []string
 	//fmt.Println(pezziurl)
 
 	// Tratta solo i chunck di tipo video // ! da verificare se va bene o no!
-	if ok := !strings.Contains(Urlpath, "video="); ok == true { //solo i chunk video
+	// if ok := !strings.Contains(Urlpath, "video="); ok == true { //solo i chunk video
 
-		return "", nil, nil
+	// 	return "", nil, nil
+	// }
+	if len(pezziurl) < 6 {
+		return
 	}
-
 	// Recupera il valore univoco del video.
 	idvideoteca := pezziurl[6]
 

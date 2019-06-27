@@ -45,7 +45,7 @@ func AVS(ctx context.Context, logfile string) (err error) {
 	defer cancel()
 
 	// Apri file zippato in memoria
-	content, err := zipfile.ReadAllZIP(ctx, logfile)
+	content, err := zipfile.ReadAllGZ(ctx, logfile)
 	if err != nil {
 		log.Printf("Error impossibile leggere file AVS %s, %s\n", logfile, err.Error())
 		return

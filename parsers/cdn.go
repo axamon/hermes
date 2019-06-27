@@ -32,6 +32,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/axamon/hermes/hasher"
@@ -40,12 +41,19 @@ import (
 
 var isCDN = regexp.MustCompile(`(?s)^\[.*\]\t[0-9]+\t\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\t[A-Z_]+\/\d{3}\t\d+\t[A-Z]+\t.*$`)
 
+var chanRecords = make(chan *[]string)
+
+var n int
+
+var wg sync.WaitGroup
+
 // CDN è il parser dei log provenienti dalla Content Delivery Network
 func CDN(ctx context.Context, logfile string) (err error) {
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	var done = make(chan bool)
 	// fmt.Println(logfile) // debug
 
 	// Apri file zippato in memoria
@@ -60,41 +68,52 @@ func CDN(ctx context.Context, logfile string) (err error) {
 
 	scan := bufio.NewScanner(r)
 
-	var records, s []string
+	var records []string
 	//var topic string
 
-	n := 0
+	go func() {
+		select {
+		case record := <-chanRecords:
+			//fmt.Println(s[:]) // debug
+			s := *record
+			if len(s) < 2 {
+				break
+			}
+			// ! OFFUSCAMENTO IP PUBBLICO CLIENTE
+			// s[2] è l'ip pubblico del cliente da offuscare
+			s[2], err = hasher.StringSumWithSalt(s[2], salt)
+			if err != nil {
+				log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
+			}
+			records = append(records, strings.Join(s, ","))
+		case <-done:
+			break
+		}
+		return
+	}()
+
 	for scan.Scan() {
 		n++
+		fmt.Println(n)
 		line := scan.Text()
 
 		// Verifica che logfile sia di tipo CDN.
-		if !isCDN.MatchString(line) {
-			err := fmt.Errorf("Error logfile %s non di tipo CDN", logfile)
-			return err
-		}
+		// if !isCDN.MatchString(line) {
+		// 	err := fmt.Errorf("Error logfile %s non di tipo CDN", logfile)
+		// 	return err
+		// }
+		wg.Add(1)
 
-		_, s, err = elaboraCDN(ctx, line)
-		if err != nil {
-			log.Printf("Error Impossibile elaborare fruzione per record: %s", s)
-		}
+		go elaboraCDN(ctx, &line)
 
-		if len(s) < 2 {
-			continue
-		}
-
-		// ! OFFUSCAMENTO IP PUBBLICO CLIENTE
-		// s[2] è l'ip pubblico del cliente da offuscare
-		s[2], err = hasher.StringSumWithSalt(s[2], salt)
-		if err != nil {
-			log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
-		}
-
-		//fmt.Println(s[:]) // debug
-		records = append(records, strings.Join(s, ","))
+		// if err != nil {
+		// 	log.Printf("Error Impossibile elaborare fruzione per record: %s", s)
+		// }
 
 	}
 
+	wg.Wait()
+	done <- true
 	// Apre nuovo file per salvare dati elaborati.
 	newFile := strings.Split(logfile, ".csv.gz")[0] + ".offuscato.csv.gz"
 	// fmt.Println(newFile)
@@ -112,11 +131,11 @@ func CDN(ctx context.Context, logfile string) (err error) {
 
 	// Scrive headers.
 	gw.Write([]byte("#Log CDN prodotto da piattaforma Hermes Copyright 2019 alberto.bregliano@telecomitalia.it\n"))
-	gw.Write([]byte("#giornoq,hashfruizione,clientip,idvideoteca,status,tts,bytes\n"))
+	gw.Write([]byte("#giornoq,hashfruizione,clientip,idvideoteca,status,tts[nanosecondi],bytes[bytes]\n"))
 	// Scrive dati.
 	gw.Write([]byte(justString + "\n"))
 	// Scrive footer.
-	gw.Write([]byte("#Numero di records: " + strconv.Itoa(n) + "\n"))
+	gw.Write([]byte("#Numero di records: " + strconv.Itoa(len(records)) + "\n"))
 	gw.Close()
 
 	// Scrive uno per uno su standard output i record offuscati.
@@ -135,28 +154,28 @@ func CDN(ctx context.Context, logfile string) (err error) {
 	return err
 }
 
-func elaboraCDN(ctx context.Context, line string) (topic string, result []string, err error) {
+func elaboraCDN(ctx context.Context, line *string) { //(topic string, result []string, err error) {
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-
+	defer wg.Done()
 	// ricerca le fruzioni nell'intervallo temporale richiesto
 	// l'intervallo temporale inzia con l'inzio di una fruizione
 
 	// fmt.Println(line)
-	if !isCDN.MatchString(line) {
-		err := fmt.Errorf("Error record non di tipo CDN: %s", line)
-		return "", nil, err
-	}
+	//if !isCDN.MatchString(line) {
+	//err := fmt.Errorf("Error record non di tipo CDN: %s", line)
+	//	return
+	//}
 
 	// Splitta la linea nei suoi fields,
 	// il separatore per i log CDN è il tab: \t
-	s := strings.Split(line, "\t")
+	s := strings.Split(*line, "\t")
 
 	// Parsa la URL nelle sue componenti.
 	u, err := url.Parse(s[6])
 	if err != nil {
-		log.Printf("Error nel parsing URL di: %s\n", line)
+		log.Printf("Error nel parsing URL di: %s\n", *line)
 	}
 	/* Urlschema := u.Scheme
 	if Urlschema != "https" { //fa passare solo le URL richieste via WEB
@@ -256,7 +275,8 @@ func elaboraCDN(ctx context.Context, line string) (topic string, result []string
 	//ingestafruizioni(Hash, clientip, idvideoteca, idaps, edgeip, giorno, orario, speed)
 
 	//s = append(s, Time, Hashfruizione, idaps, idvideoteca, status, speedStr, quartooraStr, IDipq)
-
+	var result []string
 	result = append(result, giornoq, Hashfruizione, clientip, idvideoteca, status, s[1], s[4])
-	return giornoq, result, err
+	chanRecords <- &result
+	return
 }

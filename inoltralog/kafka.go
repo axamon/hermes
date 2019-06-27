@@ -51,6 +51,29 @@ func VerificaLocalKafka(ctx context.Context) (err error) {
 	return err
 }
 
+// VerificaRemoteKafka verifica se l'instanza è raggiungibile.
+func VerificaRemoteKafka(ctx context.Context, remotekafkaserver string) (err error) {
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Sceglie il topic su cui scirvere.
+	topic := "logs"
+
+	// Seclie la partizione Kafka su cui scrivere.
+	partition := 0
+
+	// Configura la connessione.
+
+	conn, err := kafka.DialLeader(ctx, "tcp", remotekafkaserver, topic, partition)
+	defer conn.Close()
+	if err != nil {
+		log.Printf("Error impossibile aprire connessione a kafka: %s\n", err.Error())
+	}
+
+	return err
+}
+
 // LocalKafkaProducer invia records a una istanza kafka locale.
 func LocalKafkaProducer(ctx context.Context, topic string, s []string) (err error) {
 
@@ -69,6 +92,49 @@ func LocalKafkaProducer(ctx context.Context, topic string, s []string) (err erro
 
 	// Configura la connessione.
 	conn, err := kafka.DialLeader(ctx, "tcp", "localhost:9092", topic, partition)
+	defer conn.Close()
+	if err != nil {
+		log.Printf("Error impossibile aprire connessione a kafka\n")
+		return err
+	}
+
+	// Produce record in kafka.
+	for _, line := range s {
+		// Imposta timeout per la scrittura sull'istanza kafka.
+		err = conn.SetWriteDeadline(time.Now().Add(60 * time.Second))
+		if err != nil {
+			log.Printf("Error Timeout connessione a kafka\n")
+			return err
+		}
+		_, err = conn.WriteMessages(
+			kafka.Message{Value: []byte(line)},
+		)
+		if err != nil {
+			log.Printf("Error Impossibile produrre record in kafka\n")
+		}
+	}
+
+	return err
+}
+
+// RemoteKafkaProducer invia records a una istanza kafka locale.
+func RemoteKafkaProducer(ctx context.Context, remotekafkaserver, topic string, s []string) (err error) {
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Se non riesce a scrivere su Kafka procede senza andare in panico.
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered in f", r)
+		}
+	}()
+
+	// Sceglie la partizione Kafka su cui scrivere.
+	partition := 0
+
+	// Configura la connessione.
+	conn, err := kafka.DialLeader(ctx, "tcp", remotekafkaserver, topic, partition)
 	defer conn.Close()
 	if err != nil {
 		log.Printf("Error impossibile aprire connessione a kafka\n")

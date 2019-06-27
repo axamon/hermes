@@ -36,6 +36,8 @@ import (
 	"github.com/axamon/hermes/zipfile"
 )
 
+const headerregman = "cpeid	tgu	trap_timestamp	deviceid	devicetype	mode	originipaddress	averagebitrate	avgsskbps	bufferingduration	callerclass	callerrorcode	callerrormessage	callerrortype	callurl	errordesc	errorreason	eventname	levelbitrates	linespeedkbps	maxsschunkkbps	maxsskbps	minsskbps	streamingtype	videoduration	videoposition	videotitle	videotype	videourl	eventtype	fwversion	networktype	ra_version	update_time	trap_provider	mid	service_id	service_id_version	date_rif	video_provider	max_upstream_net_latency	min_upstream_net_latency	avg_upstream_net_latency	max_downstream_net_latency	min_downstream_net_latency	avg_downstream_net_latency	max_platform_latency	min_platform_latency	avg_platform_latency	packet_loss	preloaded_app_v"
+
 var isREGMAN = regexp.MustCompile(`(?m)^.*\s\d{12}\s.*$`)
 
 // REGMAN è il parser delle trap provenienti da REGMAN.
@@ -135,7 +137,7 @@ func elaboraREGMAN(ctx context.Context, line string) (topic string, result []str
 	}
 
 	// Splitta la linea nei supi fields.
-	// Il separatore per i log REGMAN è ";"
+	// Il separatore per i log REGMAN è " "
 	s := strings.Split(line, " ")
 
 	t, err := time.Parse("2006-01-02 15:04:05", s[2])

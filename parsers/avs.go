@@ -23,16 +23,17 @@ package parsers
 import (
 	"bufio"
 	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/axamon/hermes/hasher"
-	"github.com/axamon/hermes/inoltralog"
 	"github.com/axamon/hermes/zipfile"
 )
 
@@ -56,7 +57,7 @@ func AVS(ctx context.Context, logfile string) (err error) {
 	scan := bufio.NewScanner(r)
 
 	var records, s []string
-	var topic string
+	//var topic string
 	n := 0
 	for scan.Scan() {
 		n++
@@ -70,7 +71,7 @@ func AVS(ctx context.Context, logfile string) (err error) {
 
 		// fmt.Println(line) // debug
 
-		topic, s, err = elaboraAVS(ctx, line)
+		_, s, err = elaboraAVS(ctx, line)
 		if err != nil {
 			log.Printf("Error Impossibile elaborare fruzione per record: %s", s)
 		}
@@ -94,21 +95,49 @@ func AVS(ctx context.Context, logfile string) (err error) {
 		}
 
 		//	fmt.Println(s[:]) // debug
-		records = append(records, strings.Join(s, "\t"))
+		records = append(records, strings.Join(s, ","))
 	}
+
+	// Apre nuovo file per salvare dati elaborati.
+	newFile := strings.Split(logfile, ".csv.gz")[0] + ".offuscato.csv.gz"
+	// fmt.Println(newFile)
+
+	f, err := os.Create(newFile)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	gw := gzip.NewWriter(f)
+	defer gw.Close()
+
+	justString := strings.Join(records, "\n")
+	// fmt.Println(justString)
+
+	// Scrive headers.
+	gw.Write([]byte("#Log AVS prodotto da piattaforma Hermes Copyright 2019 alberto.bregliano@telecomitalia.it\n"))
+	gw.Write([]byte("#giornoq,cli,idvideoteca,mailcliente\n"))
+	// Scrive dati.
+	gw.Write([]byte(justString + "\n"))
+	// Scrive footer.
+	gw.Write([]byte("#Numero di records: " + strconv.Itoa(n) + "\n"))
+	gw.Close()
+
+	// err = ioutil.WriteFile(newFile, []byte(justString), 0644)
+	// if err != nil {
+	// 	log.Println(err.Error())
+	// }
 
 	// Scrive uno per uno su standard output i record offuscati.
-	for _, line := range records {
-		fmt.Println(line)
-	}
+	// for _, line := range records {
+	// 	fmt.Println(line)
+	// }
 
 	// Invia i records su kafka locale.
-	err = inoltralog.LocalKafkaProducer(ctx, topic, records)
-	if err != nil {
-		log.Printf("Error Impossibile salvare su kafka: %s\n", err.Error())
-	}
-
-	fmt.Println(n)
+	//err = inoltralog.LocalKafkaProducer(ctx, topic, records)
+	// err = inoltralog.RemoteKafkaProducer(ctx, "52.157.136.139:9092", topic, records)
+	// if err != nil {
+	// 	log.Printf("Error Impossibile salvare su kafka: %s\n", err.Error())
+	// }
 	return err
 }
 
@@ -150,7 +179,7 @@ func elaboraAVS(ctx context.Context, line string) (topic string, result []string
 
 	//ingestafruizioni(Hash, clientip, idvideoteca, idaps, edgeip, giorno, orario, speed)
 
-	result = append(result, "AVS", cli, idvideoteca, mailcliente)
+	result = append(result, giornoq, cli, idvideoteca, mailcliente)
 
 	return giornoq, result, err
 }

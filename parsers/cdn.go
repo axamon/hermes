@@ -23,17 +23,18 @@ package parsers
 import (
 	"bufio"
 	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
 	"log"
 	"net/url"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/axamon/hermes/hasher"
-	"github.com/axamon/hermes/inoltralog"
 	"github.com/axamon/hermes/zipfile"
 )
 
@@ -60,7 +61,7 @@ func CDN(ctx context.Context, logfile string) (err error) {
 	scan := bufio.NewScanner(r)
 
 	var records, s []string
-	var topic string
+	//var topic string
 
 	n := 0
 	for scan.Scan() {
@@ -73,7 +74,7 @@ func CDN(ctx context.Context, logfile string) (err error) {
 			return err
 		}
 
-		topic, s, err = elaboraCDN(ctx, line)
+		_, s, err = elaboraCDN(ctx, line)
 		if err != nil {
 			log.Printf("Error Impossibile elaborare fruzione per record: %s", s)
 		}
@@ -90,22 +91,47 @@ func CDN(ctx context.Context, logfile string) (err error) {
 		}
 
 		//fmt.Println(s[:]) // debug
-		records = append(records, strings.Join(s, "\t"))
+		records = append(records, strings.Join(s, ","))
 
 	}
+
+	// Apre nuovo file per salvare dati elaborati.
+	newFile := strings.Split(logfile, ".csv.gz")[0] + ".offuscato.csv.gz"
+	// fmt.Println(newFile)
+
+	f, err := os.Create(newFile)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	gw := gzip.NewWriter(f)
+	defer gw.Close()
+
+	justString := strings.Join(records, "\n")
+	// fmt.Println(justString)
+
+	// Scrive headers.
+	gw.Write([]byte("#Log CDN prodotto da piattaforma Hermes Copyright 2019 alberto.bregliano@telecomitalia.it\n"))
+	gw.Write([]byte("#giornoq,hashfruizione,clientip,idvideoteca,status,tts,bytes\n"))
+	// Scrive dati.
+	gw.Write([]byte(justString + "\n"))
+	// Scrive footer.
+	gw.Write([]byte("#Numero di records: " + strconv.Itoa(n) + "\n"))
+	gw.Close()
 
 	// Scrive uno per uno su standard output i record offuscati.
-	for _, line := range records {
-		fmt.Println(line)
-	}
+	// for _, line := range records {
+	// 	fmt.Println(line)
+	// }
 
 	// Invia i records su kafka locale.
-	err = inoltralog.LocalKafkaProducer(ctx, topic, records)
-	if err != nil {
-		log.Printf("Error Impossibile salvare su kafka: %s\n", err.Error())
-	}
+	//err = inoltralog.LocalKafkaProducer(ctx, topic, records)
+	// err = inoltralog.RemoteKafkaProducer(ctx, "52.157.136.139:9092", topic, records)
+	// if err != nil {
+	// 	log.Printf("Error Impossibile salvare su kafka: %s\n", err.Error())
+	// }
 
-	fmt.Println(n)
+	// fmt.Println(n)
 	return err
 }
 
@@ -158,26 +184,26 @@ func elaboraCDN(ctx context.Context, line string) (topic string, result []string
 
 	//Time := t.Format("200601021504") //idem con patate questo è lo stracazzuto ISO8601 meglio c'è solo epoch
 	//fmt.Println(Time)
-	var speed, tts, bytes float64
+	//var speed, tts, bytes float64
 
 	// Crea il campo giornoq per integrare i log al quarto d'ora.
 	giornoq := t.Format("20060102") + "q" + quartooraStr
 
-	tts, err = strconv.ParseFloat(s[1], 8)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	// tts, err = strconv.ParseFloat(s[1], 8)
+	// if err != nil {
+	// 	log.Fatal(err.Error())
+	// }
 
-	bytes, err = strconv.ParseFloat(s[4], 8)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	// bytes, err = strconv.ParseFloat(s[4], 8)
+	// if err != nil {
+	// 	log.Fatal(err.Error())
+	// }
 
 	// Calcola la velocità di download.
-	speed = (bytes / tts)
+	//speed = (bytes / tts)
 
 	// Trasforma la velocità in stringa.
-	speedStr := fmt.Sprintf("%f", speed)
+	//speedStr := fmt.Sprintf("%f", speed)
 
 	// Recupera l'ip del cliente.
 	clientip := s[2]
@@ -231,6 +257,6 @@ func elaboraCDN(ctx context.Context, line string) (topic string, result []string
 
 	//s = append(s, Time, Hashfruizione, idaps, idvideoteca, status, speedStr, quartooraStr, IDipq)
 
-	result = append(result, "CDN", Hashfruizione, clientip, idvideoteca, status, speedStr)
+	result = append(result, giornoq, Hashfruizione, clientip, idvideoteca, status, s[1], s[4])
 	return giornoq, result, err
 }

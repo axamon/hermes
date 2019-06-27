@@ -119,7 +119,7 @@ func AVS(ctx context.Context, logfile string) (err error) {
 	// Scrive dati.
 	gw.Write([]byte(justString + "\n"))
 	// Scrive footer.
-	gw.Write([]byte("#Numero di records: " + strconv.Itoa(n) + "\n"))
+	gw.Write([]byte("#Numero di records: " + strconv.Itoa(len(records)) + "\n"))
 	gw.Close()
 
 	// err = ioutil.WriteFile(newFile, []byte(justString), 0644)

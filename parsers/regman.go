@@ -25,7 +25,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"regexp"
@@ -85,7 +84,8 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 
 	scan := bufio.NewScanner(r)
 
-	var records, s []string
+	//var records
+	var s []string
 	// var topic string
 
 	n := 0
@@ -127,7 +127,7 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 	}
 
 	// Scrive footer.
-	gw.Write([]byte("#Numero di records: " + strconv.Itoa(len(records)) + "\n"))
+	gw.Write([]byte("#Numero di records: " + strconv.Itoa(n) + "\n"))
 	gw.Close()
 
 	// Scrive uno per uno su standard output i record offuscati.
@@ -141,7 +141,7 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 	// 	log.Printf("Error Impossibile salvare su kafka: %s\n", err.Error())
 	// }
 
-	fmt.Println(n)
+	//fmt.Println(n)
 	return err
 }
 

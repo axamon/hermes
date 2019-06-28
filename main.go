@@ -26,21 +26,25 @@ func main() {
 	// }
 
 	logfile := os.Args[1]
+	tipo := os.Args[2]
 
-	fmt.Println(logfile)
-	err = parsers.CDN(ctx, logfile)
-	if err != nil {
-		log.Printf("Error Impossibile parsare file CDN %s: %s\n", logfile, err.Error())
+	switch tipo {
+	case "CDN":
+		err = parsers.CDN(ctx, logfile)
+		if err != nil {
+			log.Printf("Error Impossibile parsare file CDN %s: %s\n", logfile, err.Error())
+		}
+	case "REGMAN":
+		err = parsers.REGMAN(ctx, logfile)
+		if err != nil {
+			log.Printf("Error Impossibile parsare file REGMAN %s: %s\n", logfile, err.Error())
+		}
+	case "AVS":
+		err = parsers.AVS(ctx, logfile)
+		if err != nil {
+			log.Printf("Error Impossibile parsare file AVS %s: %s\n", logfile, err.Error())
+		}
+	default:
+		fmt.Println("Specifica tipo di file: [CDN AVS REGMAN]")
 	}
-
-	err = parsers.REGMAN(ctx, logfile)
-	if err != nil {
-		log.Printf("Error Impossibile parsare file REGMAN %s: %s\n", logfile, err.Error())
-	}
-
-	err = parsers.AVS(ctx, logfile)
-	if err != nil {
-		log.Printf("Error Impossibile parsare file AVS %s: %s\n", logfile, err.Error())
-	}
-
 }

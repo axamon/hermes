@@ -25,6 +25,11 @@ func main() {
 	// 	fmt.Println("Ok proseguo lo stesso!")
 	// }
 
+	if len(os.Args) < 3 {
+		fmt.Println("Devi inserire il filename e il tipo di log [CDN AVS REGMAN]")
+		os.Exit(1)
+	}
+
 	logfile := os.Args[1]
 	tipo := os.Args[2]
 

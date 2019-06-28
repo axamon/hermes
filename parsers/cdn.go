@@ -41,8 +41,6 @@ import (
 
 var isCDN = regexp.MustCompile(`(?s)^\[.*\]\t[0-9]+\t\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\t[A-Z_]+\/\d{3}\t\d+\t[A-Z]+\t.*$`)
 
-//var chancdnrecords = make(chan *[]string)
-
 var n int
 var cdnrecords []string
 

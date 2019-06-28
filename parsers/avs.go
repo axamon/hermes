@@ -25,78 +25,29 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/axamon/hermes/hasher"
 	"github.com/axamon/hermes/zipfile"
 )
 
+const avsheader = "#giornoq,device,timestamp,cli,hash,attivita,idvideoteca,standard,metodopagamento,ignoto,ignoto1,mailcliente,ignoto3,servizio,costruttore,tipoprog,case,rete,num"
+
 var isAVS = regexp.MustCompile(`(?m)^.*\|.*\|.*$`)
+
+var avsRecords sync.Mutex
 
 // AVS è il parser dei log provenienti da AVS
 func AVS(ctx context.Context, logfile string) (err error) {
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-
-	// Apri file zippato in memoria
-	content, err := zipfile.ReadAllGZ(ctx, logfile)
-	if err != nil {
-		log.Printf("Error impossibile leggere file AVS %s, %s\n", logfile, err.Error())
-		return
-	}
-
-	r := bytes.NewReader(content)
-
-	scan := bufio.NewScanner(r)
-
-	var records, s []string
-	//var topic string
-	n := 0
-	for scan.Scan() {
-		n++
-		line := scan.Text()
-
-		// Verifica che logfile sia di tipo CDN.
-		if !isAVS.MatchString(line) {
-			err := fmt.Errorf("Error logfile %s non di tipo AVS", logfile)
-			return err
-		}
-
-		// fmt.Println(line) // debug
-
-		_, s, err = elaboraAVS(ctx, line)
-		if err != nil {
-			log.Printf("Error Impossibile elaborare fruzione per record: %s", s)
-		}
-
-		if len(s) < 2 {
-			continue
-		}
-
-		// ! OFFUSCAMENTO CAMPI SENSIBILI
-
-		// Effettua hash della mail dell'utente.
-		s[3], err = hasher.StringSumWithSalt(s[3], salt)
-		if err != nil {
-			log.Printf("Error Hashing in errore: %s\n", err.Error())
-		}
-
-		// Effettua hash del cli utente.
-		s[1], err = hasher.StringSumWithSalt(s[1], salt)
-		if err != nil {
-			log.Printf("Error Hashing in errore: %s\n", err.Error())
-		}
-
-		//	fmt.Println(s[:]) // debug
-		records = append(records, strings.Join(s, ","))
-	}
 
 	// Apre nuovo file per salvare dati elaborati.
 	newFile := strings.Split(logfile, ".csv.gz")[0] + ".offuscato.csv.gz"
@@ -110,16 +61,58 @@ func AVS(ctx context.Context, logfile string) (err error) {
 	gw := gzip.NewWriter(f)
 	defer gw.Close()
 
-	justString := strings.Join(records, "\n")
-	// fmt.Println(justString)
-
 	// Scrive headers.
 	gw.Write([]byte("#Log AVS prodotto da piattaforma Hermes Copyright 2019 alberto.bregliano@telecomitalia.it\n"))
-	gw.Write([]byte("#giornoq,cli,idvideoteca,mailcliente\n"))
-	// Scrive dati.
-	gw.Write([]byte(justString + "\n"))
+	gw.Write([]byte(avsheader + "\n"))
+
+	// Apri file zippato in memoria
+	content, err := zipfile.ReadAllGZ(ctx, logfile)
+	if err != nil {
+		log.Printf("Error impossibile leggere file AVS %s, %s\n", logfile, err.Error())
+		return
+	}
+
+	r := bytes.NewReader(content)
+
+	scan := bufio.NewScanner(r)
+
+	var s []string
+	//var topic string
+	n := 0
+	for scan.Scan() {
+		n++
+
+		// AVS non ha header e quindi non lo salto
+		line := scan.Text()
+
+		// Verifica che logfile sia di tipo AVS.
+		// if !isAVS.MatchString(line) {
+		// 	err := fmt.Errorf("Error logfile %s non di tipo AVS", logfile)
+		// 	return err
+		// }
+
+		// fmt.Println(line) // debug
+
+		_, s, err = elaboraAVS(ctx, line)
+		if err != nil {
+			log.Printf("Error Impossibile elaborare fruzione per record: %s", s)
+		}
+
+		// if len(s) < 2 {
+		// 	continue
+		// }
+
+		// Scrive dati.
+		justString := strings.Join(s, ",")
+		// fmt.Println(justString)
+		gw.Write([]byte(justString + "\n"))
+
+		//	fmt.Println(s[:]) // debug
+		//records = append(records, strings.Join(s, ","))
+	}
+
 	// Scrive footer.
-	gw.Write([]byte("#Numero di records: " + strconv.Itoa(len(records)) + "\n"))
+	gw.Write([]byte("#Numero di records: " + strconv.Itoa(n) + "\n"))
 	gw.Close()
 
 	// err = ioutil.WriteFile(newFile, []byte(justString), 0644)
@@ -172,15 +165,25 @@ func elaboraAVS(ctx context.Context, line string) (topic string, result []string
 	// Crea il campo giornoq per integrare i log al quarto d'ora.
 	giornoq := t.UTC().Format("20060102") + "q" + quartooraStr
 
-	cli := s[2]
+	// idvideoteca := s[5]
 
-	idvideoteca := s[5]
+	// ! OFFUSCAMENTO CAMPI SENSIBILI
 
-	mailcliente := s[10]
+	// Effettua hash della mail dell'utente.
+	s[10], err = hasher.StringSumWithSalt(s[10], salt)
+	if err != nil {
+		log.Printf("Error Hashing in errore: %s\n", err.Error())
+	}
 
-	//ingestafruizioni(Hash, clientip, idvideoteca, idaps, edgeip, giorno, orario, speed)
+	// Effettua hash del cli utente.
+	s[2], err = hasher.StringSumWithSalt(s[2], salt)
+	if err != nil {
+		log.Printf("Error Hashing in errore: %s\n", err.Error())
+	}
 
-	result = append(result, giornoq, cli, idvideoteca, mailcliente)
+	e := strings.Join(s, ",")
+
+	result = append(result, giornoq, e)
 
 	return giornoq, result, err
 }

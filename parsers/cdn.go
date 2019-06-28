@@ -46,7 +46,7 @@ var isCDN = regexp.MustCompile(`(?s)^\[.*\]\t[0-9]+\t\d{1,3}\.\d{1,3}\.\d{1,3}\.
 var n int
 var cdnrecords []string
 
-var l sync.Mutex
+var cdnRecords sync.Mutex
 
 // CDN è il parser dei log provenienti dalla Content Delivery Network
 func CDN(ctx context.Context, logfile string) (err error) {
@@ -58,6 +58,22 @@ func CDN(ctx context.Context, logfile string) (err error) {
 	// fmt.Println(logfile) // debug
 
 	// Apri file zippato in memoria
+
+	// Apre nuovo file per salvare dati elaborati.
+	newFile := strings.Split(logfile, ".csv.gz")[0] + ".offuscato.csv.gz"
+	// fmt.Println(newFile)
+
+	f, err := os.Create(newFile)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	gw := gzip.NewWriter(f)
+	defer gw.Close()
+
+	// Scrive headers.
+	gw.Write([]byte("#Log CDN prodotto da piattaforma Hermes Copyright 2019 alberto.bregliano@telecomitalia.it\n"))
+	gw.Write([]byte("#giornoq,hashfruizione,clientip,idvideoteca,status,tts[nanosecondi],bytes[bytes]\n"))
 
 	content, err := zipfile.ReadAllGZ(ctx, logfile)
 	if err != nil {
@@ -71,9 +87,8 @@ func CDN(ctx context.Context, logfile string) (err error) {
 
 	//var topic string
 
-	var wg sync.WaitGroup
-
 	for scan.Scan() {
+		n++
 		line := scan.Text()
 
 		// Verifica che logfile sia di tipo CDN.
@@ -82,38 +97,27 @@ func CDN(ctx context.Context, logfile string) (err error) {
 			return err
 		}
 
-		go elaboraCDN(ctx, &line, &wg)
+		elaboraCDN(ctx, &line, gw)
 
 		// if err != nil {
 		// 	log.Printf("Error Impossibile elaborare fruzione per record: %s", s)
 		// }
 
 	}
-
-	wg.Wait()
 	//done <- true
-	// Apre nuovo file per salvare dati elaborati.
-	newFile := strings.Split(logfile, ".csv.gz")[0] + ".offuscato.csv.gz"
-	// fmt.Println(newFile)
 
-	f, err := os.Create(newFile)
-	if err != nil {
-		log.Println(err.Error())
-	}
-
-	gw := gzip.NewWriter(f)
-	defer gw.Close()
-
-	justString := strings.Join(cdnrecords, "\n")
+	//justString := strings.Join(cdnrecords, "\n")
 	// fmt.Println(justString)
 
-	// Scrive headers.
-	gw.Write([]byte("#Log CDN prodotto da piattaforma Hermes Copyright 2019 alberto.bregliano@telecomitalia.it\n"))
-	gw.Write([]byte("#giornoq,hashfruizione,clientip,idvideoteca,status,tts[nanosecondi],bytes[bytes]\n"))
 	// Scrive dati.
-	gw.Write([]byte(justString + "\n"))
+	//gw.Write([]byte(justString + "\n"))
 	// Scrive footer.
-	gw.Write([]byte("#Numero di cdnrecords: " + strconv.Itoa(len(cdnrecords)) + "\n"))
+	cdnRecords.Lock()
+	_, err = gw.Write([]byte("#Numero di cdnrecords: " + strconv.Itoa(n) + "\n"))
+	if err != nil {
+		log.Println("ERROR Impossibile scrivere su file zippato")
+	}
+	cdnRecords.Unlock()
 	gw.Close()
 
 	// Scrive uno per uno su standard output i record offuscati.
@@ -132,12 +136,9 @@ func CDN(ctx context.Context, logfile string) (err error) {
 	return err
 }
 
-func elaboraCDN(ctx context.Context, line *string, wg *sync.WaitGroup) { //(topic string, result []string, err error) {
+func elaboraCDN(ctx context.Context, line *string, gw *gzip.Writer) { //(topic string, result []string, err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-
-	wg.Add(1)
-	defer wg.Done()
 
 	// ricerca le fruzioni nell'intervallo temporale richiesto
 	// l'intervallo temporale inzia con l'inzio di una fruizione
@@ -268,9 +269,10 @@ func elaboraCDN(ctx context.Context, line *string, wg *sync.WaitGroup) { //(topi
 		log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
 	}
 
-	l.Lock()
-	cdnrecords = append(cdnrecords, strings.Join(str, ","))
-	l.Unlock()
+	cdnRecords.Lock()
+	//cdnrecords = append(cdnrecords, strings.Join(str, ","))
+	gw.Write([]byte(strings.Join(str, ",") + "\n"))
+	cdnRecords.Unlock()
 
 	//chancdnrecords <- &result
 	return

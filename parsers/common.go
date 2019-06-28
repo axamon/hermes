@@ -20,7 +20,9 @@
 
 package parsers
 
-const salt = "vvkidtbcjujhgffbjnvrngvrinvufjkvljreucecvfcj"
+import "os"
+
+var salt = os.Getenv("salt")
 
 // Utenti clienti TimVision.
 type Utenti []Fruizioni

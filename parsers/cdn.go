@@ -41,10 +41,10 @@ import (
 
 var isCDN = regexp.MustCompile(`(?s)^\[.*\]\t[0-9]+\t\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\t[A-Z_]+\/\d{3}\t\d+\t[A-Z]+\t.*$`)
 
-//var chanRecords = make(chan *[]string)
+//var chancdnrecords = make(chan *[]string)
 
 var n int
-var records []string
+var cdnrecords []string
 
 var l sync.Mutex
 
@@ -71,38 +71,16 @@ func CDN(ctx context.Context, logfile string) (err error) {
 
 	//var topic string
 
-	// go func() {
-	// 	select {
-	// 	case record := <-chanRecords:
-	// 		//fmt.Println(s[:]) // debug
-	// 		s := *record
-	// 		if len(s) < 2 {
-	// 			break
-	// 		}
-	// 		// ! OFFUSCAMENTO IP PUBBLICO CLIENTE
-	// 		// s[2] è l'ip pubblico del cliente da offuscare
-	// 		s[2], err = hasher.StringSumWithSalt(s[2], salt)
-	// 		if err != nil {
-	// 			log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
-	// 		}
-	// 		records = append(records, strings.Join(s, ","))
-	// 	case <-done:
-	// 		break
-	// 	}
-	// 	return
-	// }()vvkidtbcjujhlllthgcbdvjdiktgufbcufkntudvrlli
 	var wg sync.WaitGroup
 
 	for scan.Scan() {
-		n++
-		fmt.Println(n)
 		line := scan.Text()
 
 		// Verifica che logfile sia di tipo CDN.
-		// if !isCDN.MatchString(line) {
-		// 	err := fmt.Errorf("Error logfile %s non di tipo CDN", logfile)
-		// 	return err
-		// }
+		if !isCDN.MatchString(line) {
+			err := fmt.Errorf("Error logfile %s non di tipo CDN", logfile)
+			return err
+		}
 
 		go elaboraCDN(ctx, &line, &wg)
 
@@ -126,7 +104,7 @@ func CDN(ctx context.Context, logfile string) (err error) {
 	gw := gzip.NewWriter(f)
 	defer gw.Close()
 
-	justString := strings.Join(records, "\n")
+	justString := strings.Join(cdnrecords, "\n")
 	// fmt.Println(justString)
 
 	// Scrive headers.
@@ -135,17 +113,17 @@ func CDN(ctx context.Context, logfile string) (err error) {
 	// Scrive dati.
 	gw.Write([]byte(justString + "\n"))
 	// Scrive footer.
-	gw.Write([]byte("#Numero di records: " + strconv.Itoa(len(records)) + "\n"))
+	gw.Write([]byte("#Numero di cdnrecords: " + strconv.Itoa(len(cdnrecords)) + "\n"))
 	gw.Close()
 
 	// Scrive uno per uno su standard output i record offuscati.
-	// for _, line := range records {
+	// for _, line := range cdnrecords {
 	// 	fmt.Println(line)
 	// }
 
-	// Invia i records su kafka locale.
-	//err = inoltralog.LocalKafkaProducer(ctx, topic, records)
-	// err = inoltralog.RemoteKafkaProducer(ctx, "52.157.136.139:9092", topic, records)
+	// Invia i cdnrecords su kafka locale.
+	//err = inoltralog.LocalKafkaProducer(ctx, topic, cdnrecords)
+	// err = inoltralog.RemoteKafkaProducer(ctx, "52.157.136.139:9092", topic, cdnrecords)
 	// if err != nil {
 	// 	log.Printf("Error Impossibile salvare su kafka: %s\n", err.Error())
 	// }
@@ -291,9 +269,9 @@ func elaboraCDN(ctx context.Context, line *string, wg *sync.WaitGroup) { //(topi
 	}
 
 	l.Lock()
-	records = append(records, strings.Join(str, ","))
+	cdnrecords = append(cdnrecords, strings.Join(str, ","))
 	l.Unlock()
 
-	//chanRecords <- &result
+	//chancdnrecords <- &result
 	return
 }

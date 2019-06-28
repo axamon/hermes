@@ -149,14 +149,16 @@ func elaboraAVS(ctx context.Context, line string) (topic string, result []string
 	// Il separatore per i log AVS è "|"
 	s := strings.Split(line, "|")
 
-	// Parsa i timestamp specifici dei log AVS.
-	t, err := time.Parse("2006-01-02T15:04:05", s[1])
+	loc, _ := time.LoadLocation("Europe/Rome")
+
+	const timeAVSFormat = "2006-01-02T15:04:05"
+	t, err := time.ParseInLocation(timeAVSFormat, s[1], loc)
 	if err != nil {
 		log.Println(err.Error())
 	}
 
-	ora := t.Hour()
-	minuto := t.Minute()
+	ora := t.UTC().Hour()
+	minuto := t.UTC().Minute()
 
 	// calcola a quale quartodora appartiene il dato.
 	quartoora := ((ora * 60) + minuto) / 15
@@ -164,12 +166,11 @@ func elaboraAVS(ctx context.Context, line string) (topic string, result []string
 	quartooraStr := strconv.Itoa(quartoora)
 
 	//epoch := t.Format(time.RFC1123Z)
-
 	//Time := t.Format("200601021504") //idem con patate questo è lo stracazzuto ISO8601 meglio c'è solo epoch
 	//fmt.Println(Time)
 
 	// Crea il campo giornoq per integrare i log al quarto d'ora.
-	giornoq := t.Format("20060102") + "q" + quartooraStr
+	giornoq := t.UTC().Format("20060102") + "q" + quartooraStr
 
 	cli := s[2]
 

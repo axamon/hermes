@@ -38,10 +38,6 @@ var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
 var logfile = flag.String("f", "", "Logfile da parsare")
 var tipo = flag.String("t", "", "tipo Logfile da parsare")
 
-// REDIS
-var remoteRedisServer = "easyapi.westeurope.cloudapp.azure.com:6379"
-var remoteRedisServerPass = "pippo"
-
 func main() {
 
 	flag.Parse()
@@ -63,7 +59,7 @@ func main() {
 	// Così evitiamo problemi con l'istanzioamento degli errori :)
 	var err error
 
-	_, err = inoltralog.TestRemoteRedisServer(ctx, remoteRedisServer, remoteRedisServerPass)
+	err = inoltralog.TestRemoteRedisServer(ctx)
 	if err != nil {
 		log.Println("Redis non disponbile", err.Error())
 	}

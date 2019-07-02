@@ -28,7 +28,6 @@ import (
 	"flag"
 	"io/ioutil"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"time"
@@ -73,26 +72,26 @@ func main() {
 	sizefile := fi.Size() / 1024 / 1024
 
 	// Se il file è più grande di  MB esce.
-	maxsize := int64(100)
+	maxsize := int64(200)
 	if sizefile > maxsize {
 		log.Printf("ERROR Le dimensioni del file %s superano il livello massimo: %v > %d MB\n", filedainviare, sizefile, maxsize)
 		return
 	}
 
 	// Verifica che il server di upload remoto sia raggiungibile.
-	testConn, err := net.DialTimeout("tcp", *remoteAddr, time.Duration(3*time.Second))
-	if err != nil {
-		log.Printf("Server remoto non raggiungibile, error: %s\n", err.Error())
-		return
-	}
+	// testConn, err := net.DialTimeout("tcp", *remoteAddr, time.Duration(3*time.Second))
+	// if err != nil {
+	// 	log.Printf("Server remoto non raggiungibile, error: %s\n", err.Error())
+	// 	//return
+	// }
 
 	// Forza la chiusura della connessione di test.
-	testConn.Close()
+	//testConn.Close()
 
 	// fmt.Println(*remoteAddr) // debug
 
 	// Crea la URL da contattare con l'endpoint specifico per l'upload.
-	remoteURL := "http://" + *remoteAddr + "/upload" // ! TODO CAMBIARE IN HTTPS
+	remoteURL := "https://" + *remoteAddr + "/upload" // ! TODO CAMBIARE IN HTTPS
 
 	// Imposta il timeout della connessione recuperandolo dal flag.
 	timeout := time.Duration(*timout) * time.Second

@@ -255,7 +255,9 @@ func elaboraCDN(ctx context.Context, line *string, gw *gzip.Writer) { //(topic s
 	//go func() {
 	//	cdnRecords.Lock()
 	//cdnrecords = append(cdnrecords, strings.Join(str, ","))
-	gw.Write([]byte(strings.Join(str, ",") + "\n"))
+	record := strings.Join(str, ",") + "\n"
+	gw.Write([]byte(record))
+	//inoltralog.InviaRecordRedisRemoto(ctx, record)
 	//	cdnRecords.Unlock()
 	//}()
 

@@ -51,7 +51,7 @@ func CDN(ctx context.Context, logfile string) (err error) {
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-
+	start := time.Now()
 	//	var done = make(chan bool)
 	// fmt.Println(logfile) // debug
 
@@ -90,10 +90,10 @@ func CDN(ctx context.Context, logfile string) (err error) {
 		line := scan.Text()
 
 		// Verifica che logfile sia di tipo CDN.
-		if !isCDN.MatchString(line) {
-			err := fmt.Errorf("Error logfile %s non di tipo CDN", logfile)
-			return err
-		}
+		//if !isCDN.MatchString(line) {
+		//	err := fmt.Errorf("Error logfile %s non di tipo CDN", logfile)
+		//	return err
+		//}
 
 		elaboraCDN(ctx, &line, gw)
 
@@ -131,6 +131,7 @@ func CDN(ctx context.Context, logfile string) (err error) {
 	// }
 
 	// fmt.Println(n)
+	fmt.Println("Impiegato: ", time.Since(start))
 	return err
 }
 
@@ -186,22 +187,6 @@ func elaboraCDN(ctx context.Context, line *string, gw *gzip.Writer) { //(topic s
 
 	// Crea il campo giornoq per integrare i log al quarto d'ora.
 	giornoq := t.Format("20060102") + "q" + quartooraStr
-
-	// tts, err = strconv.ParseFloat(s[1], 8)
-	// if err != nil {
-	// 	log.Fatal(err.Error())
-	// }
-
-	// bytes, err = strconv.ParseFloat(s[4], 8)
-	// if err != nil {
-	// 	log.Fatal(err.Error())
-	// }
-
-	// Calcola la velocità di download.
-	//speed = (bytes / tts)
-
-	// Trasforma la velocità in stringa.
-	//speedStr := fmt.Sprintf("%f", speed)
 
 	// Recupera l'ip del cliente.
 	clientip := s[2]
@@ -267,10 +252,12 @@ func elaboraCDN(ctx context.Context, line *string, gw *gzip.Writer) { //(topic s
 		log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
 	}
 
-	cdnRecords.Lock()
+	//go func() {
+	//	cdnRecords.Lock()
 	//cdnrecords = append(cdnrecords, strings.Join(str, ","))
 	gw.Write([]byte(strings.Join(str, ",") + "\n"))
-	cdnRecords.Unlock()
+	//	cdnRecords.Unlock()
+	//}()
 
 	//chancdnrecords <- &result
 	return

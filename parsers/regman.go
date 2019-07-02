@@ -39,8 +39,6 @@ import (
 
 const headerregman = "#giornoq,cpeid,tgu,trap_timestamp,deviceid,devicetype,mode,originipaddress,averagebitrate,avgsskbps,bufferingduration,callerclass,callerrorcode,callerrormessage,callerrortype,callurl,errordesc,errorreason,eventname,levelbitrates,linespeedkbps,maxsschunkkbps,maxsskbps,minsskbps,streamingtype,videoduration,videoposition,videotitle,videotype,videourl,eventtype,fwversion,networktype,ra_version,update_time,trap_provider,mid,service_id,service_id_version,date_rif,video_provider,max_upstream_net_latency,min_upstream_net_latency,avg_upstream_net_latency,max_downstream_net_latency,min_downstream_net_latency,avg_downstream_net_latency,max_platform_latency,min_platform_latency,avg_platform_latency,packet_loss,preloaded_app_v"
 
-var loc, _ = time.LoadLocation("Europe/Rome")
-
 const timeRegmanFormat = "2006-01-02 15:04:05"
 
 var isREGMAN = regexp.MustCompile(`(?m)^.*deviceid.*$`)

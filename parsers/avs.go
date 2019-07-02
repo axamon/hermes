@@ -25,6 +25,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"regexp"
@@ -38,6 +39,7 @@ import (
 )
 
 const avsheader = "#giornoq,device,timestamp,cli,hash,attivita,idvideoteca,standard,metodopagamento,ignoto,ignoto1,mailcliente,ignoto3,servizio,costruttore,tipoprog,case,rete,num"
+const timeAVSFormat = "2006-01-02T15:04:05"
 
 var isAVS = regexp.MustCompile(`(?m)^.*\|.*\|.*$`)
 
@@ -46,6 +48,7 @@ var avsRecords sync.Mutex
 // AVS è il parser dei log provenienti da AVS
 func AVS(ctx context.Context, logfile string) (err error) {
 
+	start := time.Now()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -131,6 +134,8 @@ func AVS(ctx context.Context, logfile string) (err error) {
 	// if err != nil {
 	// 	log.Printf("Error Impossibile salvare su kafka: %s\n", err.Error())
 	// }
+
+	fmt.Println(time.Since(start))
 	return err
 }
 
@@ -142,9 +147,6 @@ func elaboraAVS(ctx context.Context, line string) (topic string, result []string
 	// Il separatore per i log AVS è "|"
 	s := strings.Split(line, "|")
 
-	loc, _ := time.LoadLocation("Europe/Rome")
-
-	const timeAVSFormat = "2006-01-02T15:04:05"
 	t, err := time.ParseInLocation(timeAVSFormat, s[1], loc)
 	if err != nil {
 		log.Println(err.Error())

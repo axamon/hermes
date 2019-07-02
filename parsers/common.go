@@ -20,7 +20,12 @@
 
 package parsers
 
-import "os"
+import (
+	"os"
+	"time"
+)
+
+var loc, _ = time.LoadLocation("Europe/Rome")
 
 var salt = os.Getenv("salt")
 

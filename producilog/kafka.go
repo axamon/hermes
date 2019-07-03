@@ -75,8 +75,8 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 			return err
 		}
 
-		//conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-		conn.Close()
+		conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+		defer conn.Close()
 
 		conn.WriteMessages(
 			kafka.Message{Value: []byte(line)},

@@ -62,6 +62,13 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 
 	//var topic string
 
+	conn, err := kafka.DialContext(ctx, "tcp", "localhost:9092")
+	if err != nil {
+		log.Printf("Error impossibile connettersi: %s\n", err.Error())
+		return err
+	}
+	defer conn.Close()
+
 	for scan.Scan() {
 		line := scan.Text()
 		if strings.HasPrefix(line, "#") {
@@ -69,17 +76,15 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 		}
 		topic := strings.Split(line, ",")[0]
 
-		conn, err := kafka.DialLeader(ctx, "tcp", "localhost:9092", topic, partition)
-		if err != nil {
-			log.Printf("Error impossibile leggere file CDN %s, %s\n", logfile, err.Error())
-			return err
-		}
+		fmt.Println(topic, line)
 
 		conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-		defer conn.Close()
 
 		conn.WriteMessages(
-			kafka.Message{Value: []byte(line)},
+			kafka.Message{
+				Partition: 0,
+				Topic:     topic,
+				Value:     []byte(line)},
 		)
 	}
 

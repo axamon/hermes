@@ -5,3 +5,4 @@
 *.json
 *.pl
 *.prof
+!logs.csv.gz

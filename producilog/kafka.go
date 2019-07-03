@@ -48,8 +48,6 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	partition := 0
-
 	content, err := zipfile.ReadAllGZ(ctx, logfile)
 	if err != nil {
 		log.Printf("Error impossibile leggere file CDN %s, %s\n", logfile, err.Error())

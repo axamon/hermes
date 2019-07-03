@@ -60,11 +60,12 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 
 	//var topic string
 
-	conn, err := kafka.DialContext(ctx, "tcp", "localhost:9092")
+	conn, err := kafka.DialLeader(ctx, "tcp", "localhost:9092", "logs", 0)
 	if err != nil {
 		log.Printf("Error impossibile connettersi: %s\n", err.Error())
 		return err
 	}
+
 	defer conn.Close()
 
 	for scan.Scan() {
@@ -80,9 +81,9 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 
 		conn.WriteMessages(
 			kafka.Message{
-				Partition: 0,
-				Topic:     topic,
-				Value:     []byte(line)},
+				// Partition: 0,
+				// Topic:     topic,
+				Value: []byte(line)},
 		)
 	}
 

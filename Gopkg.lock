@@ -2,19 +2,38 @@
 
 
 [[projects]]
-  digest = "1:c37eccd75fe3b1bfda6ee4ede093ca9438378f39c99cd8d3c7d6f2e1e6ba3822"
+  digest = "1:c950e574951c7199fb3d990d0e7a61996f40f8e646ba7cf8a557878d4c737f53"
+  name = "github.com/go-redis/redis"
+  packages = [
+    ".",
+    "internal",
+    "internal/consistenthash",
+    "internal/hashtag",
+    "internal/pool",
+    "internal/proto",
+    "internal/util",
+  ]
+  pruneopts = "UT"
+  revision = "75795aa4236dc7341eefac3bbe945e68c99ef9df"
+  version = "v6.15.3"
+
+[[projects]]
+  digest = "1:74a53e872c760aed22ac0e08979a7b411ae6789c1375089d96200ca6a52d49e6"
   name = "github.com/segmentio/kafka-go"
   packages = [
     ".",
     "sasl",
   ]
   pruneopts = "UT"
-  revision = "c61692887c051e599d0e52881f2b7d79ab1f89ee"
-  version = "v0.2.4"
+  revision = "0b38267f13d5e17fcf8dfbb89168ef7fb520deb8"
+  version = "v0.2.5"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  input-imports = ["github.com/segmentio/kafka-go"]
+  input-imports = [
+    "github.com/go-redis/redis",
+    "github.com/segmentio/kafka-go",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1

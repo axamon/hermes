@@ -193,13 +193,13 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 	}()
 
 	for scan.Scan() {
+		line := new(string)
+		*line = scan.Text()
 
-		line := scan.Text()
-
-		if strings.HasPrefix(line, "#") {
+		if strings.HasPrefix(*line, "#") {
 			continue
 		}
-		canale <- &line
+		canale <- line
 	}
 	fmt.Println("Ciclo Scan finito")
 
@@ -213,7 +213,7 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 }
 
 func elabora(ctx context.Context, record *string) {
-	fmt.Println(record, *record)
+	// fmt.Println(record, *record)
 	wg.Add(1)
 	defer wg.Done()
 	nlog++

@@ -199,6 +199,10 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 	}
 
 	wg.Wait()
+	close(canale)
+	for record := range canale {
+		elabora(ctx, record)
+	}
 	fmt.Println(nlog)
 	return
 }

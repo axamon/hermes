@@ -13,8 +13,8 @@ var remoteRedisServerPass = "pippo"
 // TestRemoteRedisServer verifica la raggiungibilità del server Redis remoto.
 func TestRemoteRedisServer(ctx context.Context) (err error) {
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	// ctx, cancel := context.WithCancel(ctx)
+	// defer cancel()
 
 	client := redis.NewClient(&redis.Options{
 		Addr:     remoteRedisServer,
@@ -32,8 +32,8 @@ func TestRemoteRedisServer(ctx context.Context) (err error) {
 // InviaRecordRedisRemoto invia un record al Redis Server Remoto.
 func InviaRecordRedisRemoto(ctx context.Context, record string) (err error) {
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	// ctx, cancel := context.WithCancel(ctx)
+	// defer cancel()
 
 	client := redis.NewClient(&redis.Options{
 		Addr:     remoteRedisServer,

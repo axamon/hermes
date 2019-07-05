@@ -24,7 +24,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/segmentio/kafka-go"
 )
@@ -80,6 +79,9 @@ func LocalKafkaProducer(ctx context.Context, topic string, s []string) (err erro
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	w := kafka.NewWriter(kafka.WriterConfig{Brokers: []string{"localhost:9092"}, Topic: topic})
+	defer w.Close()
+
 	// Se non riesce a scrivere su Kafka procede senza andare in panico.
 	defer func() {
 		if r := recover(); r != nil {
@@ -87,32 +89,17 @@ func LocalKafkaProducer(ctx context.Context, topic string, s []string) (err erro
 		}
 	}()
 
-	// Sceglie la partizione Kafka su cui scrivere.
-	partition := 0
-
-	// Configura la connessione.
-	conn, err := kafka.DialLeader(ctx, "tcp", "localhost:9092", topic, partition)
-	defer conn.Close()
-	if err != nil {
-		log.Printf("Error impossibile aprire connessione a kafka\n")
-		return err
-	}
-
+	nlog := 0
 	// Produce record in kafka.
 	for _, line := range s {
-		// Imposta timeout per la scrittura sull'istanza kafka.
-		err = conn.SetWriteDeadline(time.Now().Add(60 * time.Second))
-		if err != nil {
-			log.Printf("Error Timeout connessione a kafka\n")
-			return err
-		}
-		_, err = conn.WriteMessages(
-			kafka.Message{Value: []byte(line)},
-		)
+		nlog++
+		err := w.WriteMessages(ctx, kafka.Message{Value: []byte(line)})
 		if err != nil {
 			log.Printf("Error Impossibile produrre record in kafka\n")
 		}
 	}
+
+	log.Printf("Prodotti %d logs", nlog)
 
 	return err
 }
@@ -123,6 +110,9 @@ func RemoteKafkaProducer(ctx context.Context, remotekafkaserver, topic string, s
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	w := kafka.NewWriter(kafka.WriterConfig{Brokers: []string{remotekafkaserver}, Topic: topic})
+	defer w.Close()
+
 	// Se non riesce a scrivere su Kafka procede senza andare in panico.
 	defer func() {
 		if r := recover(); r != nil {
@@ -130,32 +120,17 @@ func RemoteKafkaProducer(ctx context.Context, remotekafkaserver, topic string, s
 		}
 	}()
 
-	// Sceglie la partizione Kafka su cui scrivere.
-	partition := 0
-
-	// Configura la connessione.
-	conn, err := kafka.DialLeader(ctx, "tcp", remotekafkaserver, topic, partition)
-	defer conn.Close()
-	if err != nil {
-		log.Printf("Error impossibile aprire connessione a kafka\n")
-		return err
-	}
-
+	nlog := 0
 	// Produce record in kafka.
 	for _, line := range s {
-		// Imposta timeout per la scrittura sull'istanza kafka.
-		err = conn.SetWriteDeadline(time.Now().Add(60 * time.Second))
-		if err != nil {
-			log.Printf("Error Timeout connessione a kafka\n")
-			return err
-		}
-		_, err = conn.WriteMessages(
-			kafka.Message{Value: []byte(line)},
-		)
+		nlog++
+		err := w.WriteMessages(ctx, kafka.Message{Value: []byte(line)})
 		if err != nil {
 			log.Printf("Error Impossibile produrre record in kafka\n")
 		}
 	}
+
+	log.Printf("Prodotti %d logs", nlog)
 
 	return err
 }

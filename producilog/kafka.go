@@ -187,11 +187,11 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 		if len(canale) == 100 {
 			go elabora(ctx, <-canale)
 		}
+		wg.Wait()
 	}
-	fmt.Println("Ciclo Scan finito")
 
-	wg.Wait()
 	close(canale)
+
 	for record := range canale {
 		elabora(ctx, record)
 	}

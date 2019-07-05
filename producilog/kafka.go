@@ -176,7 +176,7 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 			select {
 			case record := <-canale:
 				// fmt.Println("singolo")
-				go elabora(ctx, record)
+				elabora(ctx, record)
 			case <-done:
 				return
 				// default:

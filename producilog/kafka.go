@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/axamon/hermes/zipfile"
@@ -148,6 +149,7 @@ var writers = make(map[string]*kafka.Writer)
 var records = make(map[string][]string)
 var canale = make(chan (*string))
 var nlog int
+var wg sync.WaitGroup
 
 // KafkaLocalProducer produce messaggi in kafka.
 func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
@@ -199,11 +201,14 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 		canale <- &line
 	}
 
+	wg.Wait()
 	fmt.Println(nlog)
 	return
 }
 
 func elabora(ctx context.Context, record *string) {
+	wg.Add(1)
+	defer wg.Done()
 	nlog++
 	topic := strings.Split(*record, ",")[0]
 

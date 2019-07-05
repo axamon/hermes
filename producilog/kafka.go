@@ -182,6 +182,7 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 			case record := <-canale:
 				elabora(ctx, record)
 			default:
+				fmt.Println("bulk")
 				if len(canale) >= 100 {
 					record := <-canale
 					elabora(ctx, record)
@@ -209,7 +210,7 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 }
 
 func elabora(ctx context.Context, record *string) {
-	fmt.Println(record, *record)
+	// fmt.Println(record, *record)
 	wg.Add(1)
 	defer wg.Done()
 	nlog++

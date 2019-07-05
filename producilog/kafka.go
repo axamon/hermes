@@ -176,6 +176,7 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 			select {
 			case record := <-canale:
 				// fmt.Println("singolo")
+				wg.Add(1)
 				elabora(ctx, record)
 			case <-done:
 				return
@@ -222,7 +223,6 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 
 func elabora(ctx context.Context, record *string) {
 	// fmt.Println(record, *record)
-	wg.Add(1)
 	defer wg.Done()
 
 	topic := strings.Split(*record, ",")[0]

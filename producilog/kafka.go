@@ -196,7 +196,6 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 		if strings.HasPrefix(line, "#") {
 			continue
 		}
-		fmt.Println(&line)
 		canale <- &line
 	}
 
@@ -210,6 +209,7 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 }
 
 func elabora(ctx context.Context, record *string) {
+	fmt.Println(record, *record)
 	wg.Add(1)
 	defer wg.Done()
 	nlog++

@@ -180,10 +180,10 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 		for {
 			select {
 			case record := <-canale:
-				fmt.Println("singolo")
+				// fmt.Println("singolo")
 				elabora(ctx, record)
 			default:
-				fmt.Println("bulk")
+				// fmt.Println("bulk")
 				if len(canale) >= 100 {
 					record := <-canale
 					elabora(ctx, record)

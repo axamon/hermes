@@ -175,20 +175,19 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 	scan := bufio.NewScanner(r)
 
 	nlog := 0
-	// Produce record in kafka.
 
+	// Produce record in kafka.
+	fmt.Println("Avvio select")
 	go func() {
 		for {
 			select {
-			case <-canale:
+			case record := <-canale:
+				elabora(ctx, record)
+			default:
 				if len(canale) >= 100 {
 					record := <-canale
 					elabora(ctx, record)
 				}
-
-			default:
-				record := <-canale
-				elabora(ctx, record)
 			}
 		}
 	}()

@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -172,6 +173,15 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 		return err
 	}
 
+	go func() {
+		for {
+			if len(canale) == 100 {
+				wg.Add(1)
+				go elabora(ctx, canale)
+			}
+		}
+	}()
+
 	r := bytes.NewReader(content)
 
 	scan := bufio.NewScanner(r)
@@ -184,44 +194,43 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 			continue
 		}
 		canale <- line
-		if len(canale) == 100 {
-			go elabora(ctx, <-canale)
-		}
-		wg.Wait()
+
 	}
+
+	wg.Wait()
 
 	close(canale)
 
-	for record := range canale {
-		elabora(ctx, record)
-	}
+	elabora(ctx, canale)
+
 	fmt.Println(nlog)
 	fmt.Println(time.Since(start))
 	return
 }
 
-func elabora(ctx context.Context, record *string) {
+func elabora(ctx context.Context, c chan *string) {
 	// fmt.Println(record, *record)
-	wg.Add(1)
 	defer wg.Done()
 
-	topic := strings.Split(*record, ",")[0]
+	for record := range c {
+		topic := strings.Split(*record, ",")[0]
 
-	if _, ok := writers[topic]; ok == false {
-		writers[topic] = kafka.NewWriter(kafka.WriterConfig{Brokers: []string{"localhost:9092"}, Topic: topic})
-		defer writers[topic].Close()
-	}
+		if _, ok := writers[topic]; ok == false {
+			writers[topic] = kafka.NewWriter(kafka.WriterConfig{Brokers: []string{"localhost:9092"}, Topic: topic})
+			defer writers[topic].Close()
+		}
 
-	records[topic] = append(records[topic], *record)
-	if len(records) >= 100 {
-		for _, line := range records[topic] {
-			err := writers[topic].WriteMessages(ctx, kafka.Message{Value: []byte(line)})
-			if err != nil {
-				log.Printf("Error Impossibile produrre record in kafka\n")
+		records[topic] = append(records[topic], *record)
+		if len(records) >= 100 {
+			for _, line := range records[topic] {
+				err := writers[topic].WriteMessages(ctx, kafka.Message{Value: []byte(line)})
+				if err != nil {
+					log.Printf("Error Impossibile produrre record in kafka\n")
+				}
+				nlog++
 			}
-			nlog++
 		}
 	}
-
+	runtime.Gosched()
 	return
 }

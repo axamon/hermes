@@ -15,7 +15,7 @@ func main() {
 
 	logfile := os.Args[1]
 
-	err := producilog.KafkaLocalProducer2(ctx, logfile)
+	err := producilog.KafkaLocalProducer(ctx, logfile)
 	if err != nil {
 		log.Printf("ERROR impossibile produrre messaggi in kafka: %s\n", err.Error())
 	}

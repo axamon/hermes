@@ -42,8 +42,8 @@ func KafkaLocalConsumer(ctx context.Context, topic string, oldoffset int64) (dat
 	return b, batch.Offset(), err
 }
 
-// KafkaLocalProducer produce messaggi in kafka.
-func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
+// KafkaLocalProducer3 produce messaggi in kafka.
+func KafkaLocalProducer3(ctx context.Context, logfile string) (err error) {
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -142,4 +142,51 @@ func KafkaLocalProducer2(ctx context.Context, logfile string) (err error) {
 	log.Printf("Prodotti %d records", n)
 	return
 
+}
+
+// KafkaLocalProducer produce messaggi in kafka.
+func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Se non riesce a scrivere su Kafka procede senza andare in panico.
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered in f", r)
+		}
+	}()
+
+	content, err := zipfile.ReadAllGZ(ctx, logfile)
+	if err != nil {
+		log.Printf("Error impossibile leggere file CDN %s, %s\n", logfile, err.Error())
+		return err
+	}
+
+	r := bytes.NewReader(content)
+
+	scan := bufio.NewScanner(r)
+
+	nlog := 0
+	// Produce record in kafka.
+	for scan.Scan() {
+		line := scan.Text()
+		if strings.HasPrefix(line, "#") {
+			continue
+		}
+		topic := strings.Split(line, ",")[0]
+
+		w := kafka.NewWriter(kafka.WriterConfig{Brokers: []string{"localhost:9092"}, Topic: topic})
+		defer w.Close()
+
+		err := w.WriteMessages(ctx, kafka.Message{Value: []byte(line)})
+		if err != nil {
+			log.Printf("Error Impossibile produrre record in kafka\n")
+		}
+		nlog++
+	}
+
+	log.Printf("Prodotti %d logs", nlog)
+
+	return err
 }

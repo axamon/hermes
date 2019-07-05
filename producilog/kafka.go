@@ -145,6 +145,7 @@ func KafkaLocalProducer2(ctx context.Context, logfile string) (err error) {
 }
 
 var writers = make(map[string]*kafka.Writer)
+var records = make(map[string][]string)
 
 // KafkaLocalProducer produce messaggi in kafka.
 func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
@@ -183,12 +184,17 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 			defer writers[topic].Close()
 		}
 
-		err := writers[topic].WriteMessages(ctx, kafka.Message{Value: []byte(line)})
-		if err != nil {
-			log.Printf("Error Impossibile produrre record in kafka\n")
+		records[topic] = append(records[topic], line)
+		if len(records) >= 100 {
+			for _, line := range records[topic] {
+				err := writers[topic].WriteMessages(ctx, kafka.Message{Value: []byte(line)})
+				if err != nil {
+					log.Printf("Error Impossibile produrre record in kafka\n")
+				}
+			}
 		}
 		nlog++
-		fmt.Println(nlog)
+		fmt.Println(topic, nlog)
 	}
 
 	log.Printf("Prodotti %d logs", nlog)

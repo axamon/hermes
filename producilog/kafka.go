@@ -174,26 +174,29 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 
 	nlog := 0
 	// Produce record in kafka.
+
 	go func() {
-		for scan.Scan() {
-			line := scan.Text()
-			if strings.HasPrefix(line, "#") {
-				continue
+		for {
+			select {
+			case <-canale:
+				if len(canale) >= 100 {
+					record := <-canale
+					elabora(ctx, record)
+				}
+
+			default:
+				record := <-canale
+				elabora(ctx, record)
 			}
-			canale <- &line
 		}
 	}()
 
-	select {
-	case <-canale:
-		if len(canale) >= 100 {
-			record := <-canale
-			elabora(ctx, record)
+	for scan.Scan() {
+		line := scan.Text()
+		if strings.HasPrefix(line, "#") {
+			continue
 		}
-
-	default:
-		record := <-canale
-		elabora(ctx, record)
+		canale <- &line
 	}
 
 	fmt.Println(nlog)

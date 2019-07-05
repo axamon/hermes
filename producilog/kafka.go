@@ -174,8 +174,6 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 
 	scan := bufio.NewScanner(r)
 
-	nlog := 0
-
 	// Produce record in kafka.
 	fmt.Println("Avvio select")
 	go func() {

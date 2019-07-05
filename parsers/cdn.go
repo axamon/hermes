@@ -252,14 +252,11 @@ func elaboraCDN(ctx context.Context, line *string, gw *gzip.Writer) { //(topic s
 		log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
 	}
 
-	//go func() {
-	//	cdnRecords.Lock()
-	//cdnrecords = append(cdnrecords, strings.Join(str, ","))
 	record := strings.Join(str, ",") + "\n"
+	//cdnrecords = append(cdnrecords, strings.Join(str, ","))
+	cdnRecords.Lock()
 	gw.Write([]byte(record))
-	//inoltralog.InviaRecordRedisRemoto(ctx, record)
-	//	cdnRecords.Unlock()
-	//}()
+	cdnRecords.Unlock()
 
 	//chancdnrecords <- &result
 	return

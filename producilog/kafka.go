@@ -148,7 +148,7 @@ func KafkaLocalProducer2(ctx context.Context, logfile string) (err error) {
 
 var writers = make(map[string]*kafka.Writer)
 var records = make(map[string][]string)
-var canale = make(chan (*string), 200)
+var canale = make(chan (*string), 1)
 var nlog int
 var wg sync.WaitGroup
 
@@ -179,11 +179,11 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 				go elabora(ctx, record)
 			case <-done:
 				return
-			default:
-				// fmt.Println("bulk")
-				if len(canale) >= 100 {
-					go elabora(ctx, <-canale)
-				}
+				// default:
+				// 	// fmt.Println("bulk")
+				// 	if len(canale) >= 100 {
+				// 		go elabora(ctx, <-canale)
+				// }
 			}
 		}
 	}()
@@ -224,7 +224,7 @@ func elabora(ctx context.Context, record *string) {
 	// fmt.Println(record, *record)
 	wg.Add(1)
 	defer wg.Done()
-	nlog++
+
 	topic := strings.Split(*record, ",")[0]
 
 	if _, ok := writers[topic]; ok == false {
@@ -240,6 +240,7 @@ func elabora(ctx context.Context, record *string) {
 				log.Printf("Error Impossibile produrre record in kafka\n")
 			}
 		}
+		nlog++
 	}
 	runtime.Gosched()
 	return

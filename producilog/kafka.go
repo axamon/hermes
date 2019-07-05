@@ -188,6 +188,7 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 			log.Printf("Error Impossibile produrre record in kafka\n")
 		}
 		nlog++
+		fmt.Println(nlog)
 	}
 
 	log.Printf("Prodotti %d logs", nlog)

@@ -147,7 +147,7 @@ func KafkaLocalProducer2(ctx context.Context, logfile string) (err error) {
 
 var writers = make(map[string]*kafka.Writer)
 var records = make(map[string][]string)
-var canale = make(chan (*string))
+var canale = make(chan (*string), 200)
 var nlog int
 var wg sync.WaitGroup
 

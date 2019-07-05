@@ -146,6 +146,8 @@ func KafkaLocalProducer2(ctx context.Context, logfile string) (err error) {
 
 var writers = make(map[string]*kafka.Writer)
 var records = make(map[string][]string)
+var canale = make(chan (*string))
+var nlog int
 
 // KafkaLocalProducer produce messaggi in kafka.
 func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
@@ -172,32 +174,50 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 
 	nlog := 0
 	// Produce record in kafka.
-	for scan.Scan() {
-		line := scan.Text()
-		if strings.HasPrefix(line, "#") {
-			continue
-		}
-		topic := strings.Split(line, ",")[0]
-
-		if _, ok := writers[topic]; ok == false {
-			writers[topic] = kafka.NewWriter(kafka.WriterConfig{Brokers: []string{"localhost:9092"}, Topic: topic})
-			defer writers[topic].Close()
-		}
-
-		records[topic] = append(records[topic], line)
-		if len(records) >= 100 {
-			for _, line := range records[topic] {
-				err := writers[topic].WriteMessages(ctx, kafka.Message{Value: []byte(line)})
-				if err != nil {
-					log.Printf("Error Impossibile produrre record in kafka\n")
-				}
+	go func() {
+		for scan.Scan() {
+			line := scan.Text()
+			if strings.HasPrefix(line, "#") {
+				continue
 			}
+			canale <- &line
 		}
-		nlog++
-		fmt.Println(topic, nlog)
+	}()
+
+	select {
+	case <-canale:
+		if len(canale) >= 100 {
+			record := <-canale
+			elabora(ctx, record)
+		}
+
+	default:
+		record := <-canale
+		elabora(ctx, record)
 	}
 
-	log.Printf("Prodotti %d logs", nlog)
+	fmt.Println(nlog)
+	return
+}
 
-	return err
+func elabora(ctx context.Context, record *string) {
+	nlog++
+	topic := strings.Split(*record, ",")[0]
+
+	if _, ok := writers[topic]; ok == false {
+		writers[topic] = kafka.NewWriter(kafka.WriterConfig{Brokers: []string{"localhost:9092"}, Topic: topic})
+		defer writers[topic].Close()
+	}
+
+	records[topic] = append(records[topic], *record)
+	if len(records) >= 100 {
+		for _, line := range records[topic] {
+			err := writers[topic].WriteMessages(ctx, kafka.Message{Value: []byte(line)})
+			if err != nil {
+				log.Printf("Error Impossibile produrre record in kafka\n")
+			}
+		}
+	}
+
+	return
 }

@@ -192,9 +192,11 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 
 	for scan.Scan() {
 		line := scan.Text()
+
 		if strings.HasPrefix(line, "#") {
 			continue
 		}
+		fmt.Print(&line)
 		canale <- &line
 	}
 

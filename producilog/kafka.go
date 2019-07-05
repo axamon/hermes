@@ -148,7 +148,7 @@ func KafkaLocalProducer2(ctx context.Context, logfile string) (err error) {
 
 var writers = make(map[string]*kafka.Writer)
 var records = make(map[string][]string)
-var canale = make(chan *string, 100)
+var canale = make(chan (*string), 200)
 var nlog int
 var wg sync.WaitGroup
 
@@ -167,20 +167,32 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 		}
 	}()
 
+	done := make(chan bool, 1)
+
+	// Produce record in kafka.
+	fmt.Println("Avvio select")
+	go func() {
+		for {
+			select {
+			case record := <-canale:
+				// fmt.Println("singolo")
+				go elabora(ctx, record)
+			case <-done:
+				return
+			default:
+				// fmt.Println("bulk")
+				if len(canale) >= 100 {
+					go elabora(ctx, <-canale)
+				}
+			}
+		}
+	}()
+
 	content, err := zipfile.ReadAllGZ(ctx, logfile)
 	if err != nil {
 		log.Printf("Error impossibile leggere file CDN %s, %s\n", logfile, err.Error())
 		return err
 	}
-
-	go func() {
-		for {
-			if len(canale) == 100 {
-				wg.Add(1)
-				go elabora(ctx, canale)
-			}
-		}
-	}()
 
 	r := bytes.NewReader(content)
 
@@ -194,40 +206,38 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 			continue
 		}
 		canale <- line
-
 	}
+	fmt.Println("Ciclo Scan finito")
 
 	wg.Wait()
-
 	close(canale)
-
-	elabora(ctx, canale)
-
+	done <- true
+	for record := range canale {
+		elabora(ctx, record)
+	}
 	fmt.Println(nlog)
 	fmt.Println(time.Since(start))
 	return
 }
 
-func elabora(ctx context.Context, c chan *string) {
+func elabora(ctx context.Context, record *string) {
 	// fmt.Println(record, *record)
+	wg.Add(1)
 	defer wg.Done()
+	nlog++
+	topic := strings.Split(*record, ",")[0]
 
-	for record := range c {
-		topic := strings.Split(*record, ",")[0]
+	if _, ok := writers[topic]; ok == false {
+		writers[topic] = kafka.NewWriter(kafka.WriterConfig{Brokers: []string{"localhost:9092"}, Topic: topic})
+		defer writers[topic].Close()
+	}
 
-		if _, ok := writers[topic]; ok == false {
-			writers[topic] = kafka.NewWriter(kafka.WriterConfig{Brokers: []string{"localhost:9092"}, Topic: topic})
-			defer writers[topic].Close()
-		}
-
-		records[topic] = append(records[topic], *record)
-		if len(records) >= 100 {
-			for _, line := range records[topic] {
-				err := writers[topic].WriteMessages(ctx, kafka.Message{Value: []byte(line)})
-				if err != nil {
-					log.Printf("Error Impossibile produrre record in kafka\n")
-				}
-				nlog++
+	records[topic] = append(records[topic], *record)
+	if len(records) >= 100 {
+		for _, line := range records[topic] {
+			err := writers[topic].WriteMessages(ctx, kafka.Message{Value: []byte(line)})
+			if err != nil {
+				log.Printf("Error Impossibile produrre record in kafka\n")
 			}
 		}
 	}

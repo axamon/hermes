@@ -200,6 +200,7 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 		}
 		canale <- &line
 	}
+	fmt.Prinln("Ciclo Scan finito")
 
 	wg.Wait()
 	close(canale)

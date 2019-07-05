@@ -147,7 +147,7 @@ func KafkaLocalProducer2(ctx context.Context, logfile string) (err error) {
 
 var writers = make(map[string]*kafka.Writer)
 var records = make(map[string][]string)
-var canale = make(chan (*string), 200)
+var canale = make(chan *string, 100)
 var nlog int
 var wg sync.WaitGroup
 
@@ -176,23 +176,6 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 
 	scan := bufio.NewScanner(r)
 
-	// Produce record in kafka.
-	fmt.Println("Avvio select")
-	go func() {
-		for {
-			select {
-			case <-canale:
-				// fmt.Println("singolo")
-				elabora(ctx, <-canale)
-			default:
-				// fmt.Println("bulk")
-				if len(canale) >= 100 {
-					elabora(ctx, <-canale)
-				}
-			}
-		}
-	}()
-
 	for scan.Scan() {
 		line := new(string)
 		*line = scan.Text()
@@ -201,6 +184,9 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 			continue
 		}
 		canale <- line
+		if len(canale) == 100 {
+			go elabora(ctx, <-canale)
+		}
 	}
 	fmt.Println("Ciclo Scan finito")
 
@@ -218,7 +204,7 @@ func elabora(ctx context.Context, record *string) {
 	// fmt.Println(record, *record)
 	wg.Add(1)
 	defer wg.Done()
-	nlog++
+
 	topic := strings.Split(*record, ",")[0]
 
 	if _, ok := writers[topic]; ok == false {
@@ -233,6 +219,7 @@ func elabora(ctx context.Context, record *string) {
 			if err != nil {
 				log.Printf("Error Impossibile produrre record in kafka\n")
 			}
+			nlog++
 		}
 	}
 

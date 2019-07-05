@@ -111,11 +111,13 @@ func KafkaLocalProducer2(ctx context.Context, logfile string) (err error) {
 
 	partition := 0
 
+	n := 0
 	for scan.Scan() {
 		line := scan.Text()
 		if strings.HasPrefix(line, "#") {
 			continue
 		}
+		n++
 
 		topic := strings.Split(line, ",")[0]
 
@@ -124,7 +126,7 @@ func KafkaLocalProducer2(ctx context.Context, logfile string) (err error) {
 			log.Printf("Error impossibile connettersi: %s\n", err.Error())
 			return err
 		}
-		fmt.Println(topic, line)
+		// fmt.Println(topic, line)
 
 		conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 
@@ -137,7 +139,7 @@ func KafkaLocalProducer2(ctx context.Context, logfile string) (err error) {
 		conn.Close()
 
 	}
-
+	log.Printf("Prodotti %d records", n)
 	return
 
 }

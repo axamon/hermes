@@ -157,6 +157,8 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	start := time.Now()
+
 	// Se non riesce a scrivere su Kafka procede senza andare in panico.
 	defer func() {
 		if r := recover(); r != nil {
@@ -179,14 +181,13 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 	go func() {
 		for {
 			select {
-			case record := <-canale:
+			case <-canale:
 				// fmt.Println("singolo")
-				elabora(ctx, record)
+				elabora(ctx, <-canale)
 			default:
 				// fmt.Println("bulk")
 				if len(canale) >= 100 {
-					record := <-canale
-					elabora(ctx, record)
+					elabora(ctx, <-canale)
 				}
 			}
 		}
@@ -209,6 +210,7 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 		elabora(ctx, record)
 	}
 	fmt.Println(nlog)
+	fmt.Println(time.Since(start))
 	return
 }
 

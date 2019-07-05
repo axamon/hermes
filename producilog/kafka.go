@@ -124,8 +124,6 @@ func KafkaLocalProducer2(ctx context.Context, logfile string) (err error) {
 			log.Printf("Error impossibile connettersi: %s\n", err.Error())
 			return err
 		}
-		defer conn.Close()
-
 		fmt.Println(topic, line)
 
 		conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
@@ -136,6 +134,8 @@ func KafkaLocalProducer2(ctx context.Context, logfile string) (err error) {
 				// Topic:     topic,
 				Value: []byte(line)},
 		)
+		conn.Close()
+
 	}
 
 	return

@@ -70,21 +70,21 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 
 	// Produce records in kafka.
 	log.Println("Avvio select")
-	go func() {
-		defer log.Println("Select  finito")
-		for {
-			select {
-			case <-done:
-				return
-			default:
-				if len(canale) >= 100 {
-					fmt.Println("bulk")
-					wg.Add(1)
-					elabora(ctx)
-				}
-			}
-		}
-	}()
+	// go func() {
+	// 	defer log.Println("Select  finito")
+	// 	for {
+	// 		select {
+	// 		case <-done:
+	// 			return
+	// 		default:
+	// 			wg.Add(1)
+	// 			elabora(ctx)
+	// 		}
+	// 	}
+	// }()
+
+	wg.Add(1)
+	go elabora(ctx)
 
 	// Apre il file zippato e salva il contenuto in memoria.
 	content, err := zipfile.ReadAllGZ(ctx, logfile)

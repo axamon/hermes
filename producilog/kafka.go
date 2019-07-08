@@ -149,20 +149,17 @@ func elabora(ctx context.Context) {
 		fmt.Println("Produco Log")
 		if len(records[topic]) >= 100 || isOpen == false {
 
-			if _, ok := writers[topic]; ok == false {
-
-				fmt.Println("Creo Writer")
-				// time.Sleep(2 * time.Microsecond)
-				writers[topic] = kafka.NewWriter(kafka.WriterConfig{Brokers: []string{"localhost:9092"}, Topic: topic})
-				// defer writers[topic].Close()
-			}
+			fmt.Println("Creo Writer")
+			// time.Sleep(2 * time.Microsecond)
+			w := kafka.NewWriter(kafka.WriterConfig{Brokers: []string{"localhost:9092"}, Topic: topic})
+			defer w.Close()
 
 			for _, line := range records[topic] {
 
 				strings.Split(line, ",")
 				// time.Sleep(2 * time.Microsecond)
 				fmt.Println("Produco Log 1")
-				err := writers[topic].WriteMessages(ctx, kafka.Message{Value: []byte(line)})
+				err := w.WriteMessages(ctx, kafka.Message{Value: []byte(line)})
 				if err != nil {
 					log.Printf("Error Impossibile produrre record in kafka\n")
 				}

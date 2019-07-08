@@ -236,7 +236,7 @@ func elabora(ctx context.Context, record *string) {
 	}
 
 	records[topic] = append(records[topic], *record)
-	if len(records) >= 100 {
+	if len(records) >= 100 || _,isOpen := <-canale; isOpen == false {
 		for _, line := range records[topic] {
 			err := writers[topic].WriteMessages(ctx, kafka.Message{Value: []byte(line)})
 			if err != nil {

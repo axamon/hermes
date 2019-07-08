@@ -108,7 +108,7 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 		//	fmt.Println(*line)
 		canale <- &line
 		wg.Add(1)
-		go elabora(ctx)
+		elabora(ctx)
 		//fmt.Println("linea caricata su canale")
 	}
 	fmt.Println("Ciclo Scan finito", time.Since(startScan))
@@ -121,7 +121,7 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 
 	// Ripulisce i resti
 	wg.Add(1)
-	go elabora(ctx)
+	elabora(ctx)
 
 	// Attende che tutte le elaborazioni siano finite.
 	wg.Wait()
@@ -152,7 +152,7 @@ func elabora(ctx context.Context) {
 		}
 
 		records[topic] = append(records[topic], *record)
-		fmt.Println(len(records[topic]))
+		// fmt.Println(len(records[topic]))
 		_, isOpen := <-canale
 		if len(records[topic]) >= 1000 || isOpen == false {
 			for _, line := range records[topic] {

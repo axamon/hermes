@@ -213,6 +213,7 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 	close(canale)
 	done <- true
 	for record := range canale {
+		wg.Add(1)
 		elabora(ctx, record)
 	}
 

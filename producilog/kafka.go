@@ -105,7 +105,9 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 			continue
 		}
 		//	fmt.Println(*line)
-		canale <- &line
+		topic := strings.Split(line, ",")[0]
+		records[topic] = append(records[topic], line)
+		// canale <- topic
 		wg.Add(1)
 		elabora(ctx)
 		//fmt.Println("linea caricata su canale")

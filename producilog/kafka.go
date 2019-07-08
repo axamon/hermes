@@ -93,9 +93,11 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 		//	fmt.Println(*line)
 		topic := strings.Split(line, ",")[0]
 		records[topic] = append(records[topic], line)
-		// canale <- topic
-		wg.Add(1)
-		elabora(ctx, topic)
+		if len(records[topic]) >= 100 {
+			// canale <- topic
+			wg.Add(1)
+			elabora(ctx, topic)
+		}
 		//fmt.Println("linea caricata su canale")
 	}
 	fmt.Println("Ciclo Scan finito", time.Since(startScan))
@@ -129,28 +131,24 @@ func elabora(ctx context.Context, topic string) {
 	fmt.Println("Inizio Goroutine")
 	defer wg.Done()
 
-	_, isOpen := <-canale
-	fmt.Println("Produco Log")
-	if len(records[topic]) >= 100 || isOpen == false {
+	fmt.Println("Creo Writer")
+	// time.Sleep(2 * time.Microsecond)
+	w := kafka.NewWriter(kafka.WriterConfig{Brokers: []string{"localhost:9092"}, Topic: topic})
+	defer w.Close()
 
-		fmt.Println("Creo Writer")
+	for _, line := range records[topic] {
+
+		strings.Split(line, ",")
 		// time.Sleep(2 * time.Microsecond)
-		w := kafka.NewWriter(kafka.WriterConfig{Brokers: []string{"localhost:9092"}, Topic: topic})
-		defer w.Close()
-
-		for _, line := range records[topic] {
-
-			strings.Split(line, ",")
-			// time.Sleep(2 * time.Microsecond)
-			fmt.Println("Produco Log 1")
-			err := w.WriteMessages(ctx, kafka.Message{Value: []byte(line)})
-			if err != nil {
-				log.Printf("Error Impossibile produrre record in kafka\n")
-			}
+		fmt.Println("Produco Log 1")
+		err := w.WriteMessages(ctx, kafka.Message{Value: []byte(line)})
+		if err != nil {
+			log.Printf("Error Impossibile produrre record in kafka\n")
 		}
-		fmt.Println("Prodotto log su: ", topic)
-		nlog++
 	}
+	fmt.Println("Prodotto log su: ", topic)
+	nlog++
 	fmt.Println(nlog)
 	return
+
 }

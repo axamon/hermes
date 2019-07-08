@@ -143,19 +143,20 @@ func elabora(ctx context.Context) {
 		// var topic string
 		topic := strings.Split(*record, ",")[0]
 
-		if _, ok := writers[topic]; ok == false {
-
-			fmt.Println("Creo Writer")
-			// time.Sleep(2 * time.Microsecond)
-			writers[topic] = kafka.NewWriter(kafka.WriterConfig{Brokers: []string{"localhost:9092"}, Topic: topic})
-			// defer writers[topic].Close()
-		}
-
 		records[topic] = append(records[topic], *record)
 		// fmt.Println(len(records[topic]))
 		_, isOpen := <-canale
 		fmt.Println("Produco Log")
 		if len(records[topic]) >= 100 || isOpen == false {
+
+			if _, ok := writers[topic]; ok == false {
+
+				fmt.Println("Creo Writer")
+				// time.Sleep(2 * time.Microsecond)
+				writers[topic] = kafka.NewWriter(kafka.WriterConfig{Brokers: []string{"localhost:9092"}, Topic: topic})
+				// defer writers[topic].Close()
+			}
+
 			for _, line := range records[topic] {
 
 				strings.Split(line, ",")

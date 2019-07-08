@@ -46,7 +46,7 @@ func KafkaLocalConsumer(ctx context.Context, topic string, oldoffset int64) (dat
 
 var writers = make(map[string]*kafka.Writer)
 var records = make(map[string][]string)
-var canale = make(chan *string, 100)
+var canale = make(chan *string, 1000)
 var nlog int
 var wg sync.WaitGroup
 
@@ -119,6 +119,10 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 	// Comunica che i cicli scan sono finiti.
 	done <- true
 
+	// Ripulisce i resti
+	wg.Add(1)
+	go elabora(ctx)
+
 	// Attende che tutte le elaborazioni siano finite.
 	wg.Wait()
 
@@ -132,7 +136,7 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 }
 
 func elabora(ctx context.Context) {
-	fmt.Println("Inizio Goroutine")
+	// fmt.Println("Inizio Goroutine")
 	defer wg.Done()
 
 	for record := range canale {
@@ -150,7 +154,7 @@ func elabora(ctx context.Context) {
 		records[topic] = append(records[topic], *record)
 		fmt.Println(len(records[topic]))
 		_, isOpen := <-canale
-		if len(records[topic]) >= 100 || isOpen == false {
+		if len(records[topic]) >= 1000 || isOpen == false {
 			for _, line := range records[topic] {
 
 				strings.Split(line, ",")

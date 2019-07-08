@@ -148,7 +148,7 @@ func elabora(ctx context.Context) {
 			fmt.Println("Creo Writer")
 			// time.Sleep(2 * time.Microsecond)
 			writers[topic] = kafka.NewWriter(kafka.WriterConfig{Brokers: []string{"localhost:9092"}, Topic: topic})
-			defer writers[topic].Close()
+			// defer writers[topic].Close()
 		}
 
 		records[topic] = append(records[topic], *record)

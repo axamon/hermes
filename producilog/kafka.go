@@ -83,9 +83,6 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 	// 	}
 	// }()
 
-	wg.Add(1)
-	go elabora(ctx)
-
 	// Apre il file zippato e salva il contenuto in memoria.
 	content, err := zipfile.ReadAllGZ(ctx, logfile)
 	if err != nil {
@@ -110,6 +107,8 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 		}
 		//	fmt.Println(*line)
 		canale <- &line
+		wg.Add(1)
+		go elabora(ctx)
 		//fmt.Println("linea caricata su canale")
 	}
 	fmt.Println("Ciclo Scan finito", time.Since(startScan))

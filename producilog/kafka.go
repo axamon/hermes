@@ -67,21 +67,6 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 
 	done := make(chan bool, 1)
 
-	// Produce records in kafka.
-	log.Println("Avvio select")
-	// go func() {
-	// 	defer log.Println("Select  finito")
-	// 	for {
-	// 		select {
-	// 		case <-done:
-	// 			return
-	// 		default:
-	// 			wg.Add(1)
-	// 			elabora(ctx)
-	// 		}
-	// 	}
-	// }()
-
 	// Apre il file zippato e salva il contenuto in memoria.
 	content, err := zipfile.ReadAllGZ(ctx, logfile)
 	if err != nil {
@@ -140,13 +125,6 @@ func elabora(ctx context.Context) {
 	fmt.Println("Inizio Goroutine")
 	defer wg.Done()
 
-	for record := range canale {
-		// fmt.Println("Elaboro linea")
-		// var topic string
-		topic := strings.Split(*record, ",")[0]
-
-		records[topic] = append(records[topic], *record)
-		// fmt.Println(len(records[topic]))
 		_, isOpen := <-canale
 		fmt.Println("Produco Log")
 		if len(records[topic]) >= 100 || isOpen == false {

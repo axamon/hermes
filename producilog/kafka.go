@@ -143,9 +143,9 @@ func elabora(ctx context.Context) {
 
 		if _, ok := writers[topic]; ok == false {
 
-			time.Sleep(2 * time.Microsecond)
-			// writers[topic] = kafka.NewWriter(kafka.WriterConfig{Brokers: []string{"localhost:9092"}, Topic: topic})
-			// defer writers[topic].Close()
+			// time.Sleep(2 * time.Microsecond)
+			writers[topic] = kafka.NewWriter(kafka.WriterConfig{Brokers: []string{"localhost:9092"}, Topic: topic})
+			defer writers[topic].Close()
 		}
 
 		records[topic] = append(records[topic], *record)
@@ -155,12 +155,12 @@ func elabora(ctx context.Context) {
 			for _, line := range records[topic] {
 
 				strings.Split(line, ",")
-				time.Sleep(2 * time.Microsecond)
+				// time.Sleep(2 * time.Microsecond)
 
-				// err := writers[topic].WriteMessages(ctx, kafka.Message{Value: []byte(line)})
-				// if err != nil {
-				// 	log.Printf("Error Impossibile produrre record in kafka\n")
-				// }
+				err := writers[topic].WriteMessages(ctx, kafka.Message{Value: []byte(line)})
+				if err != nil {
+					log.Printf("Error Impossibile produrre record in kafka\n")
+				}
 			}
 			nlog++
 		}

@@ -46,7 +46,7 @@ func KafkaLocalConsumer(ctx context.Context, topic string, oldoffset int64) (dat
 
 var writers = make(map[string]*kafka.Writer)
 var records = make(map[string][]string)
-var canale = make(chan (*string), 1)
+var canale = make(chan *string, 100)
 var nlog int
 var wg sync.WaitGroup
 
@@ -115,12 +115,16 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 	}
 	// fmt.Println("Ciclo Scan finito", time.Since(startScan))
 
+<<<<<<< HEAD
 	// Chiude il canale.
+=======
+>>>>>>> e36b9c79e3d452cb4b2bd48aad54c3016fa73ed7
 	close(canale)
 
 	// Comunica che i cicli scan sono finiti.
 	done <- true
 
+<<<<<<< HEAD
 	// // Elabora gli elementi rimasti nel canale.
 	// for record := range canale {
 	// 	wg.Add(1)
@@ -131,6 +135,10 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 	wg.Wait()
 
 	// Mostra quanti records sono stati processati.
+=======
+	wg.Wait()
+
+>>>>>>> e36b9c79e3d452cb4b2bd48aad54c3016fa73ed7
 	fmt.Println(nlog)
 
 	// Mostra quanto tempo è stato richiesto per terminare elaborazione.
@@ -163,10 +171,20 @@ func elabora(ctx context.Context) {
 				strings.Split(line, ",")
 				time.Sleep(2 * time.Millisecond)
 
+<<<<<<< HEAD
 				// err := writers[topic].WriteMessages(ctx, kafka.Message{Value: []byte(line)})
 				// if err != nil {
 				// 	log.Printf("Error Impossibile produrre record in kafka\n")
 				// }
+=======
+	records[topic] = append(records[topic], *record)
+	_, isOpen := <-canale
+	if len(records) >= 100 || isOpen == false {
+		for _, line := range records[topic] {
+			err := writers[topic].WriteMessages(ctx, kafka.Message{Value: []byte(line)})
+			if err != nil {
+				log.Printf("Error Impossibile produrre record in kafka\n")
+>>>>>>> e36b9c79e3d452cb4b2bd48aad54c3016fa73ed7
 			}
 			nlog++
 		}

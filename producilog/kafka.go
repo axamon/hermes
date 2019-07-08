@@ -210,12 +210,14 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 	}
 	fmt.Println("Ciclo Scan finito")
 
-	wg.Wait()
 	close(canale)
 	done <- true
 	for record := range canale {
 		elabora(ctx, record)
 	}
+
+	wg.Wait()
+
 	fmt.Println(nlog)
 	fmt.Println(time.Since(start))
 	return

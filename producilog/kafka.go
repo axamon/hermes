@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -141,8 +140,8 @@ func elabora(ctx context.Context) {
 
 	for record := range canale {
 		// fmt.Println("Elaboro linea")
-		var topic string
-		topic = strings.Split(*record, ",")[0]
+		// var topic string
+		topic := strings.Split(*record, ",")[0]
 
 		if _, ok := writers[topic]; ok == false {
 
@@ -172,6 +171,6 @@ func elabora(ctx context.Context) {
 		fmt.Println(nlog)
 	}
 
-	runtime.Gosched()
+	// runtime.Gosched()
 	return
 }

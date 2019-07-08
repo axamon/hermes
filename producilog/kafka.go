@@ -148,7 +148,7 @@ func KafkaLocalProducer2(ctx context.Context, logfile string) (err error) {
 
 var writers = make(map[string]*kafka.Writer)
 var records = make(map[string][]string)
-var canale = make(chan (*string), 1)
+var canale = make(chan *string, 100)
 var nlog int
 var wg sync.WaitGroup
 
@@ -212,10 +212,6 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 
 	close(canale)
 	done <- true
-	for record := range canale {
-		wg.Add(1)
-		elabora(ctx, record)
-	}
 
 	wg.Wait()
 

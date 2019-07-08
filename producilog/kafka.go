@@ -69,11 +69,9 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 	done := make(chan bool, 1)
 
 	// Produce records in kafka.
-	// fmt.Println("Avvio select")
-	// wg.Add(1)
-	// go elabora(ctx)
-	//
+	log.Println("Avvio select")
 	go func() {
+		defer log.Println("Select  finito")
 		for {
 			select {
 			case <-done:
@@ -102,30 +100,24 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 	scan := bufio.NewScanner(r)
 
 	//  fmt.Println("Ciclo Scan iniziato")
-	// startScan := time.Now()
+	startScan := time.Now()
 	for scan.Scan() {
-		line := new(string) // si usa new per creare line nella heap
-		*line = scan.Text()
+		// line := new(string) // si usa new per creare line nella heap
+		line := scan.Text()
 
-		if strings.HasPrefix(*line, "#") {
+		if strings.HasPrefix(line, "#") {
 			continue
 		}
 		//	fmt.Println(*line)
-		canale <- line
+		canale <- &line
 	}
-	// fmt.Println("Ciclo Scan finito", time.Since(startScan))
+	fmt.Println("Ciclo Scan finito", time.Since(startScan))
 
 	// Chiude il canale.
 	close(canale)
 
 	// Comunica che i cicli scan sono finiti.
 	done <- true
-
-	// // Elabora gli elementi rimasti nel canale.
-	// for record := range canale {
-	// 	wg.Add(1)
-	// 	elabora(ctx)
-	// }
 
 	// Attende che tutte le elaborazioni siano finite.
 	wg.Wait()
@@ -144,7 +136,7 @@ func elabora(ctx context.Context) {
 	defer wg.Done()
 
 	for record := range canale {
-		fmt.Println(*record)
+		//fmt.Println(*record)
 		var topic string
 		topic = strings.Split(*record, ",")[0]
 

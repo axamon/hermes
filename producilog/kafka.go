@@ -154,12 +154,13 @@ func elabora(ctx context.Context) {
 		records[topic] = append(records[topic], *record)
 		// fmt.Println(len(records[topic]))
 		_, isOpen := <-canale
+		fmt.Println("Produco Log")
 		if len(records[topic]) >= 100 || isOpen == false {
 			for _, line := range records[topic] {
 
 				strings.Split(line, ",")
 				// time.Sleep(2 * time.Microsecond)
-
+				fmt.Println("Produco Log 1")
 				err := writers[topic].WriteMessages(ctx, kafka.Message{Value: []byte(line)})
 				if err != nil {
 					log.Printf("Error Impossibile produrre record in kafka\n")

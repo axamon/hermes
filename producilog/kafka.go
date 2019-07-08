@@ -110,6 +110,7 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 		}
 		//	fmt.Println(*line)
 		canale <- &line
+		fmt.Println("linea caricata su canale")
 	}
 	fmt.Println("Ciclo Scan finito", time.Since(startScan))
 

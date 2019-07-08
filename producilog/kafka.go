@@ -149,8 +149,9 @@ func elabora(ctx context.Context) {
 		}
 
 		records[topic] = append(records[topic], *record)
+		fmt.Println(len(records[topic]))
 		_, isOpen := <-canale
-		if len(records) >= 100 || isOpen == false {
+		if len(records[topic]) >= 100 || isOpen == false {
 			for _, line := range records[topic] {
 
 				strings.Split(line, ",")

@@ -99,7 +99,7 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 	// Crea uno scanner
 	scan := bufio.NewScanner(r)
 
-	//  fmt.Println("Ciclo Scan iniziato")
+	fmt.Println("Ciclo Scan iniziato")
 	startScan := time.Now()
 	for scan.Scan() {
 		// line := new(string) // si usa new per creare line nella heap
@@ -132,7 +132,7 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 }
 
 func elabora(ctx context.Context) {
-	// fmt.Println(record, *record)
+	fmt.Println("Inizio Goroutine")
 	defer wg.Done()
 
 	for record := range canale {

@@ -110,7 +110,7 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 		}
 		//	fmt.Println(*line)
 		canale <- &line
-		fmt.Println("linea caricata su canale")
+		//fmt.Println("linea caricata su canale")
 	}
 	fmt.Println("Ciclo Scan finito", time.Since(startScan))
 
@@ -137,7 +137,7 @@ func elabora(ctx context.Context) {
 	defer wg.Done()
 
 	for record := range canale {
-		//fmt.Println(*record)
+		fmt.Println("Elaboro linea")
 		var topic string
 		topic = strings.Split(*record, ",")[0]
 

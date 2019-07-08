@@ -136,7 +136,7 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 }
 
 func elabora(ctx context.Context) {
-	// fmt.Println("Inizio Goroutine")
+	fmt.Println("Inizio Goroutine")
 	defer wg.Done()
 
 	for record := range canale {
@@ -146,6 +146,7 @@ func elabora(ctx context.Context) {
 
 		if _, ok := writers[topic]; ok == false {
 
+			fmt.Println("Creo Writer")
 			// time.Sleep(2 * time.Microsecond)
 			writers[topic] = kafka.NewWriter(kafka.WriterConfig{Brokers: []string{"localhost:9092"}, Topic: topic})
 			defer writers[topic].Close()
@@ -154,7 +155,7 @@ func elabora(ctx context.Context) {
 		records[topic] = append(records[topic], *record)
 		// fmt.Println(len(records[topic]))
 		_, isOpen := <-canale
-		if len(records[topic]) >= 1000 || isOpen == false {
+		if len(records[topic]) >= 100 || isOpen == false {
 			for _, line := range records[topic] {
 
 				strings.Split(line, ",")
@@ -165,6 +166,7 @@ func elabora(ctx context.Context) {
 					log.Printf("Error Impossibile produrre record in kafka\n")
 				}
 			}
+			fmt.Println("Prodotto log su: ", topic)
 			nlog++
 		}
 		fmt.Println(nlog)

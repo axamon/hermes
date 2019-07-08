@@ -44,108 +44,6 @@ func KafkaLocalConsumer(ctx context.Context, topic string, oldoffset int64) (dat
 	return b, batch.Offset(), err
 }
 
-// KafkaLocalProducer3 produce messaggi in kafka.
-func KafkaLocalProducer3(ctx context.Context, logfile string) (err error) {
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	content, err := zipfile.ReadAllGZ(ctx, logfile)
-	if err != nil {
-		log.Printf("Error impossibile leggere file CDN %s, %s\n", logfile, err.Error())
-		return err
-	}
-
-	r := bytes.NewReader(content)
-
-	scan := bufio.NewScanner(r)
-
-	//var topic string
-
-	conn, err := kafka.DialLeader(ctx, "tcp", "localhost:9092", "logs", 0)
-	if err != nil {
-		log.Printf("Error impossibile connettersi: %s\n", err.Error())
-		return err
-	}
-
-	defer conn.Close()
-
-	for scan.Scan() {
-		line := scan.Text()
-		if strings.HasPrefix(line, "#") {
-			continue
-		}
-		topic := strings.Split(line, ",")[0]
-
-		fmt.Println(topic, line)
-
-		conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-
-		conn.WriteMessages(
-			kafka.Message{
-				// Partition: 0,
-				// Topic:     topic,
-				Value: []byte(line)},
-		)
-	}
-
-	return
-
-}
-
-// KafkaLocalProducer2 produce messaggi in kafka.
-func KafkaLocalProducer2(ctx context.Context, logfile string) (err error) {
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	content, err := zipfile.ReadAllGZ(ctx, logfile)
-	if err != nil {
-		log.Printf("Error impossibile leggere file CDN %s, %s\n", logfile, err.Error())
-		return err
-	}
-
-	r := bytes.NewReader(content)
-
-	scan := bufio.NewScanner(r)
-
-	//var topic string
-
-	partition := 0
-
-	n := 0
-	for scan.Scan() {
-		line := scan.Text()
-		if strings.HasPrefix(line, "#") {
-			continue
-		}
-		n++
-
-		topic := strings.Split(line, ",")[0]
-
-		conn, err := kafka.DialLeader(ctx, "tcp", "localhost:9092", topic, partition)
-		if err != nil {
-			log.Printf("Error impossibile connettersi: %s\n", err.Error())
-			return err
-		}
-		// fmt.Println(topic, line)
-
-		conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-
-		conn.WriteMessages(
-			kafka.Message{
-				// Partition: 0,
-				// Topic:     topic,
-				Value: []byte(line)},
-		)
-		conn.Close()
-
-	}
-	log.Printf("Prodotti %d records", n)
-	return
-
-}
-
 var writers = make(map[string]*kafka.Writer)
 var records = make(map[string][]string)
 var canale = make(chan (*string), 1)
@@ -155,6 +53,7 @@ var wg sync.WaitGroup
 // KafkaLocalProducer produce messaggi in kafka.
 func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 
+	// Crea il contesto e la funzione di cancellazione.
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -169,79 +68,110 @@ func KafkaLocalProducer(ctx context.Context, logfile string) (err error) {
 
 	done := make(chan bool, 1)
 
-	// Produce record in kafka.
-	fmt.Println("Avvio select")
+	// Produce records in kafka.
+	// fmt.Println("Avvio select")
+	// wg.Add(1)
+	// go elabora(ctx)
+	//
 	go func() {
 		for {
 			select {
-			case record := <-canale:
-				// fmt.Println("singolo")
-				wg.Add(1)
-				elabora(ctx, record)
 			case <-done:
 				return
-				// default:
-				// 	// fmt.Println("bulk")
-				// 	if len(canale) >= 100 {
-				// 		go elabora(ctx, <-canale)
-				// }
+			default:
+				if len(canale) >= 100 {
+					fmt.Println("bulk")
+					wg.Add(1)
+					elabora(ctx)
+				}
 			}
 		}
 	}()
 
+	// Apre il file zippato e salva il contenuto in memoria.
 	content, err := zipfile.ReadAllGZ(ctx, logfile)
 	if err != nil {
-		log.Printf("Error impossibile leggere file CDN %s, %s\n", logfile, err.Error())
+		log.Printf("ERROR Impossibile leggere file CDN %s, %s\n", logfile, err.Error())
 		return err
 	}
 
+	// Trasforma il contenuto in *Reader
 	r := bytes.NewReader(content)
 
+	// Crea uno scanner
 	scan := bufio.NewScanner(r)
 
+	//  fmt.Println("Ciclo Scan iniziato")
+	// startScan := time.Now()
 	for scan.Scan() {
-		line := new(string)
+		line := new(string) // si usa new per creare line nella heap
 		*line = scan.Text()
 
 		if strings.HasPrefix(*line, "#") {
 			continue
 		}
+		//	fmt.Println(*line)
 		canale <- line
 	}
-	fmt.Println("Ciclo Scan finito")
+	// fmt.Println("Ciclo Scan finito", time.Since(startScan))
 
-	wg.Wait()
+	// Chiude il canale.
 	close(canale)
+
+	// Comunica che i cicli scan sono finiti.
 	done <- true
-	for record := range canale {
-		elabora(ctx, record)
-	}
+
+	// // Elabora gli elementi rimasti nel canale.
+	// for record := range canale {
+	// 	wg.Add(1)
+	// 	elabora(ctx)
+	// }
+
+	// Attende che tutte le elaborazioni siano finite.
+	wg.Wait()
+
+	// Mostra quanti records sono stati processati.
 	fmt.Println(nlog)
+
+	// Mostra quanto tempo è stato richiesto per terminare elaborazione.
 	fmt.Println(time.Since(start))
+
 	return
 }
 
-func elabora(ctx context.Context, record *string) {
+func elabora(ctx context.Context) {
 	// fmt.Println(record, *record)
 	defer wg.Done()
 
-	topic := strings.Split(*record, ",")[0]
+	for record := range canale {
+		fmt.Println(*record)
+		var topic string
+		topic = strings.Split(*record, ",")[0]
 
-	if _, ok := writers[topic]; ok == false {
-		writers[topic] = kafka.NewWriter(kafka.WriterConfig{Brokers: []string{"localhost:9092"}, Topic: topic})
-		defer writers[topic].Close()
-	}
+		if _, ok := writers[topic]; ok == false {
 
-	records[topic] = append(records[topic], *record)
-	if len(records) >= 100 {
-		for _, line := range records[topic] {
-			err := writers[topic].WriteMessages(ctx, kafka.Message{Value: []byte(line)})
-			if err != nil {
-				log.Printf("Error Impossibile produrre record in kafka\n")
-			}
+			time.Sleep(2 * time.Millisecond)
+			// writers[topic] = kafka.NewWriter(kafka.WriterConfig{Brokers: []string{"localhost:9092"}, Topic: topic})
+			// defer writers[topic].Close()
 		}
-		nlog++
+
+		records[topic] = append(records[topic], *record)
+		_, isOpen := <-canale
+		if len(records) >= 100 || isOpen == false {
+			for _, line := range records[topic] {
+
+				strings.Split(line, ",")
+				time.Sleep(2 * time.Millisecond)
+
+				// err := writers[topic].WriteMessages(ctx, kafka.Message{Value: []byte(line)})
+				// if err != nil {
+				// 	log.Printf("Error Impossibile produrre record in kafka\n")
+				// }
+			}
+			nlog++
+		}
 	}
+
 	runtime.Gosched()
 	return
 }

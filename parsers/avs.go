@@ -85,7 +85,7 @@ func AVS(ctx context.Context, logfile string) (err error) {
 
 	scan := bufio.NewScanner(r)
 
-	var s []string
+	//var s []string
 	//var topic string
 	n := 0
 	for scan.Scan() {
@@ -102,17 +102,96 @@ func AVS(ctx context.Context, logfile string) (err error) {
 
 		// fmt.Println(line) // debug
 
-		_, s, err = elaboraAVS2(ctx, line)
-		if err != nil {
-			log.Printf("Error Impossibile elaborare fruzione per record: %s", s)
-		}
+		// _, s, err = elaboraAVS2(ctx, line)
+		// if err != nil {
+		// 	log.Printf("Error Impossibile elaborare fruzione per record: %s", s)
+		// }
 
 		// if len(s) < 2 {
 		// 	continue
 		// }
 
+		if strings.Contains(line, `"`) {
+			ll := strings.Split(line,`"`)
+			if strings.Contains(ll[1],"|") {
+				ll[1] = strings.Replace(ll[1], "|", " ",-1)
+			}
+			line = strings.Join(ll,"")
+		}
+		
+	
+	
+		// Il separatore per i log AVS è "|"
+		s := strings.Split(line, "|")
+
+		if len(s) != 18 {
+			log.Fatal("Errore", s)
+		}
+	
+		t, err := time.ParseInLocation(timeAVSFormat, s[1], loc)
+		if err != nil {
+			log.Println(err.Error())
+		}
+	
+		ora := t.UTC().Hour()
+		minuto := t.UTC().Minute()
+	
+		// calcola a quale quartodora appartiene il dato.
+		quartoora := ((ora * 60) + minuto) / 15
+	
+		quartooraStr := strconv.Itoa(quartoora)
+	
+		//epoch := t.Format(time.RFC1123Z)
+		//Time := t.Format("200601021504") //idem con patate questo è lo stracazzuto ISO8601 meglio c'è solo epoch
+		//fmt.Println(Time)
+	
+		// Crea il campo giornoq per integrare i log al quarto d'ora.
+		giornoq := t.UTC().Format("20060102") + "q" + quartooraStr
+	
+		// idvideoteca := s[5]
+	
+		// ! OFFUSCAMENTO CAMPI SENSIBILI
+	
+		// Effettua hash della mail dell'utente.
+		s[10], err = hasher.StringSumWithSalt(s[10], salt)
+		if err != nil {
+			log.Printf("Error Hashing in errore: %s\n", err.Error())
+		}
+	
+		// Gestione account secondari
+		s[11], err = hasher.StringSumWithSalt(s[11], salt)
+		if err != nil {
+			log.Printf("Error Hashing in errore: %s\n", err.Error())
+		}
+
+		l := int(len(s[2]))
+		switch {
+		case l>12:
+			log.Printf("ERROR CLI maggiore di 12: %s", s)
+		case l==0:
+			break
+		case l<12:
+			for l := len(s[2]); l <= 12; l++ {
+				s[2] = "0"+s[2]
+			}
+			fallthrough
+		case l==12:
+			s[2], err = hasher.StringSumWithSalt(s[2], salt)
+			if err != nil {
+				log.Printf("Error Hashing in errore: %s\n", err.Error())
+			}	
+		}
+	
+
+
+	
+
+		//e := strings.Join(s, `;`)
+		//Prepend field
+		result := append([]string{giornoq}, s...)
+
 		// Scrive dati.
-		err := csvWriter.Write(s)
+		err = csvWriter.Write(result)
 		if err != nil {
 			log.Printf("ERROR Impossibile srivere: %s\n", err.Error())
 		}
@@ -122,6 +201,7 @@ func AVS(ctx context.Context, logfile string) (err error) {
 
 		//	fmt.Println(s[:]) // debug
 		//records = append(records, strings.Join(s, ","))
+		csvWriter.Flush()
 	}
 
 	// Scrive footer.

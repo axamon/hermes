@@ -130,9 +130,11 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 		// justString := strings.Join(s, ";")
 		// fmt.Println(justString)
 		// gw.Write([]byte(justString + "\n"))
+		csvWriter.Flush()
 
 	}
 
+	
 	// Scrive footer.
 	gw.Write([]byte("#Numero di records: " + strconv.Itoa(n) + "\n"))
 	gw.Close()

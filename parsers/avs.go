@@ -21,6 +21,7 @@
 package parsers
 
 import (
+	"encoding/csv"
 	"bufio"
 	"bytes"
 	"compress/gzip"
@@ -38,7 +39,7 @@ import (
 	"github.com/axamon/hermes/zipfile"
 )
 
-const avsheader = "#giornoq,device,timestamp,cli,hash,attivita,idvideoteca,standard,metodopagamento,ignoto,ignoto1,mailcliente,ignoto3,servizio,costruttore,tipoprog,case,rete,num"
+const avsheader = "#giornoq;device;timestamp;cli;hash;attivita;idvideoteca;standard;metodopagamento;ignoto;ignoto1;mailcliente;ignoto3;servizio;costruttore;tipoprog;case;rete;num"
 const timeAVSFormat = "2006-01-02T15:04:05"
 
 var isAVS = regexp.MustCompile(`(?m)^.*\|.*\|.*$`)
@@ -54,6 +55,7 @@ func AVS(ctx context.Context, logfile string) (err error) {
 
 	// Apre nuovo file per salvare dati elaborati.
 	newFile := strings.Split(logfile, ".csv.gz")[0] + ".offuscato.csv.gz"
+	
 	// fmt.Println(newFile)
 
 	f, err := os.Create(newFile)
@@ -64,9 +66,13 @@ func AVS(ctx context.Context, logfile string) (err error) {
 	gw := gzip.NewWriter(f)
 	defer gw.Close()
 
+	csvWriter := csv.NewWriter(gw)
+	csvWriter.Comma= ';'
 	// Scrive headers.
 	gw.Write([]byte("#Log AVS prodotto da piattaforma Hermes Copyright 2019 alberto.bregliano@telecomitalia.it\n"))
 	gw.Write([]byte(avsheader + "\n"))
+	
+
 
 	// Apri file zippato in memoria
 	content, err := zipfile.ReadAllGZ(ctx, logfile)
@@ -96,7 +102,7 @@ func AVS(ctx context.Context, logfile string) (err error) {
 
 		// fmt.Println(line) // debug
 
-		_, s, err = elaboraAVS(ctx, line)
+		_, s, err = elaboraAVS2(ctx, line)
 		if err != nil {
 			log.Printf("Error Impossibile elaborare fruzione per record: %s", s)
 		}
@@ -106,9 +112,13 @@ func AVS(ctx context.Context, logfile string) (err error) {
 		// }
 
 		// Scrive dati.
-		justString := strings.Join(s, ",")
+		err := csvWriter.Write(s)
+		if err != nil {
+			log.Printf("ERROR Impossibile srivere: %s\n", err.Error())
+		}
+		// justString := strings.Join(s, ";")
 		// fmt.Println(justString)
-		gw.Write([]byte(justString + "\n"))
+		// gw.Write([]byte(justString + "\n"))
 
 		//	fmt.Println(s[:]) // debug
 		//records = append(records, strings.Join(s, ","))
@@ -183,9 +193,78 @@ func elaboraAVS(ctx context.Context, line string) (topic string, result []string
 		log.Printf("Error Hashing in errore: %s\n", err.Error())
 	}
 
-	e := strings.Join(s, ",")
+	e := strings.Join(s, `;`)
 
 	result = append(result, giornoq, e)
+
+	return giornoq, result, err
+}
+
+func elaboraAVS2(ctx context.Context, line string) (topic string, result []string, err error) {
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Elimina i divisori di campo nel campo delle mail secondarie
+	// Se esistono virgolette nel record allora ci sono mail multiple
+	if strings.Contains(line, `"`) {
+		ll := strings.Split(line,`"`)
+		if strings.Contains(ll[1],"|") {
+			ll[1] = strings.Replace(ll[1], "|", " ",-1)
+		}
+		line = strings.Join(ll,"")
+	}
+	
+
+
+	// Il separatore per i log AVS è "|"
+	s := strings.Split(line, "|")
+
+	t, err := time.ParseInLocation(timeAVSFormat, s[1], loc)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	ora := t.UTC().Hour()
+	minuto := t.UTC().Minute()
+
+	// calcola a quale quartodora appartiene il dato.
+	quartoora := ((ora * 60) + minuto) / 15
+
+	quartooraStr := strconv.Itoa(quartoora)
+
+	//epoch := t.Format(time.RFC1123Z)
+	//Time := t.Format("200601021504") //idem con patate questo è lo stracazzuto ISO8601 meglio c'è solo epoch
+	//fmt.Println(Time)
+
+	// Crea il campo giornoq per integrare i log al quarto d'ora.
+	giornoq := t.UTC().Format("20060102") + "q" + quartooraStr
+
+	// idvideoteca := s[5]
+
+	// ! OFFUSCAMENTO CAMPI SENSIBILI
+
+	// Effettua hash della mail dell'utente.
+	s[10], err = hasher.StringSumWithSalt(s[10], salt)
+	if err != nil {
+		log.Printf("Error Hashing in errore: %s\n", err.Error())
+	}
+
+	// Gestione account secondari
+	s[11], err = hasher.StringSumWithSalt(s[11], salt)
+	if err != nil {
+		log.Printf("Error Hashing in errore: %s\n", err.Error())
+	}
+
+	// Effettua hash del cli utente.
+	s[2], err = hasher.StringSumWithSalt(s[2], salt)
+	if err != nil {
+		log.Printf("Error Hashing in errore: %s\n", err.Error())
+	}
+
+	//e := strings.Join(s, `;`)
+	//Prepend field
+	result = append([]string{giornoq}, s...)
 
 	return giornoq, result, err
 }

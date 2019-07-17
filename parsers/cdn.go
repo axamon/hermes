@@ -71,7 +71,7 @@ func CDN(ctx context.Context, logfile string) (err error) {
 
 	// Scrive headers.
 	gw.Write([]byte("#Log CDN prodotto da piattaforma Hermes Copyright 2019 alberto.bregliano@telecomitalia.it\n"))
-	gw.Write([]byte("#giornoq,hashfruizione,clientip,idvideoteca,status,tts[nanosecondi],bytes[bytes]\n"))
+	gw.Write([]byte("#giornoq;hashfruizione;clientip;idvideoteca;status;tts[nanosecondi];bytes[bytes]\n"))
 
 	content, err := zipfile.ReadAllGZ(ctx, logfile)
 	if err != nil {
@@ -252,8 +252,8 @@ func elaboraCDN(ctx context.Context, line *string, gw *gzip.Writer) { //(topic s
 		log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
 	}
 
-	record := strings.Join(str, ",") + "\n"
-	//cdnrecords = append(cdnrecords, strings.Join(str, ","))
+	record := strings.Join(str, ";") + "\n"
+	//cdnrecords = append(cdnrecords, strings.Join(str, ";"))
 	cdnRecords.Lock()
 	gw.Write([]byte(record))
 	cdnRecords.Unlock()

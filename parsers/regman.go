@@ -21,6 +21,7 @@
 package parsers
 
 import (
+	"encoding/csv"
 	"bufio"
 	"bytes"
 	"compress/gzip"
@@ -37,7 +38,7 @@ import (
 	"github.com/axamon/hermes/zipfile"
 )
 
-const headerregman = "#giornoq,cpeid,tgu,trap_timestamp,deviceid,devicetype,mode,originipaddress,averagebitrate,avgsskbps,bufferingduration,callerclass,callerrorcode,callerrormessage,callerrortype,callurl,errordesc,errorreason,eventname,levelbitrates,linespeedkbps,maxsschunkkbps,maxsskbps,minsskbps,streamingtype,videoduration,videoposition,videotitle,videotype,videourl,eventtype,fwversion,networktype,ra_version,update_time,trap_provider,mid,service_id,service_id_version,date_rif,video_provider,max_upstream_net_latency,min_upstream_net_latency,avg_upstream_net_latency,max_downstream_net_latency,min_downstream_net_latency,avg_downstream_net_latency,max_platform_latency,min_platform_latency,avg_platform_latency,packet_loss,preloaded_app_v"
+const headerregman = "#giornoq;cpeid;tgu;trap_timestamp;deviceid;devicetype;mode;originipaddress;averagebitrate;avgsskbps;bufferingduration;callerclass;callerrorcode;callerrormessage;callerrortype;callurl;errordesc;errorreason;eventname;levelbitrates;linespeedkbps;maxsschunkkbps;maxsskbps;minsskbps;streamingtype;videoduration;videoposition;videotitle;videotype;videourl;eventtype;fwversion;networktype;ra_version;update_time;trap_provider;mid;service_id;service_id_version;date_rif;video_provider;max_upstream_net_latency;min_upstream_net_latency;avg_upstream_net_latency;max_downstream_net_latency;min_downstream_net_latency;avg_downstream_net_latency;max_platform_latency;min_platform_latency;avg_platform_latency;packet_loss;preloaded_app_v"
 
 const timeRegmanFormat = "2006-01-02 15:04:05"
 
@@ -64,6 +65,9 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 
 	gw := gzip.NewWriter(f)
 	defer gw.Close()
+
+	csvWriter := csv.NewWriter(gw)
+	csvWriter.Comma= ';'
 
 	// Scrive headers.
 	gw.Write([]byte("#Log REGMAN prodotto da piattaforma Hermes Copyright 2019 alberto.bregliano@telecomitalia.it\n"))
@@ -103,7 +107,7 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 		// 	return err
 		// }
 
-		_, s, err = elaboraREGMAN(ctx, &line)
+		_, s, err = elaboraREGMAN2(ctx, &line)
 		if err != nil {
 			log.Printf("Error Impossibile elaborare REGMAN record: %s", s)
 		}
@@ -115,12 +119,17 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 		//fmt.Println(s[:]) // debug
 
 		// Viene aggiunto a records un record con i campi individuati
-		// separati da ",".
+		// separati da ";".
 
 		// Scrive dati.
-		justString := strings.Join(s, ",")
+		// Scrive dati.
+		err := csvWriter.Write(s)
+		if err != nil {
+			log.Printf("ERROR Impossibile srivere: %s\n", err.Error())
+		}
+		// justString := strings.Join(s, ";")
 		// fmt.Println(justString)
-		gw.Write([]byte(justString + "\n"))
+		// gw.Write([]byte(justString + "\n"))
 
 	}
 
@@ -193,9 +202,68 @@ func elaboraREGMAN(ctx context.Context, line *string) (topic string, result []st
 		log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
 	}
 
-	e := strings.Join(s, ",")
+	e := strings.Join(s, ";")
 
 	result = append(result, giornoq, e)
+
+	return giornoq, result, err
+}
+
+func elaboraREGMAN2(ctx context.Context, line *string) (topic string, result []string, err error) {
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// ricerca le fruzioni nell'intervallo temporale richiesto
+	// l'intervallo temporale inzia con l'inzio di una fruizione
+
+	// Splitta la linea nei supi fields.
+	// Il separatore per i log REGMAN è ";"
+	s := strings.Split(*line, ";")
+
+	t, err := time.ParseInLocation(timeRegmanFormat, s[2], loc)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	ora := t.UTC().Hour()
+	minuto := t.UTC().Minute()
+
+	// calcola a quale quartodora appartiene il dato.
+	quartoora := ((ora * 60) + minuto) / 15
+
+	quartooraStr := strconv.Itoa(quartoora)
+
+	//IDipq, _ := hasher.StringSum(s[6] + quartooraStr)
+
+	//epoch := t.Format(time.RFC1123Z)
+
+	// Crea il campo giornoq per integrare i log al quarto d'ora.
+	giornoq := t.UTC().Format("20060102") + "q" + quartooraStr
+
+	//Time := t.Format("200601021504") //idem con patate questo è lo stracazzuto ISO8601 meglio c'è solo epoch
+	//fmt.Println(Time)
+
+	// recupera ip cliente
+
+	//! OFFUSCAMENTO CAMPI SENSIBILI
+	// s[6] contiente ip pubblico cliente.
+	s[6], err = hasher.StringSumWithSalt(s[6], salt)
+	if err != nil {
+		log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
+	}
+
+	// s[1] contiene il cli del cliente.
+	s[1], err = hasher.StringSumWithSalt(s[1], salt)
+	if err != nil {
+		log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
+	}
+
+	//e := strings.Join(s, ";")
+
+	//result = append(result, giornoq, e)
+	//Prepend field
+	result = append([]string{giornoq}, s...)
 
 	return giornoq, result, err
 }

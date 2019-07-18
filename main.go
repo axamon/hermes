@@ -54,8 +54,6 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	parsers.AVS(ctx, "/home/gioml/Analytics/new/AVS/Fruizioni_08062019.csv.gz")
-
 	// Così evitiamo problemi con l'istanzioamento degli errori :)
 	var err error
 

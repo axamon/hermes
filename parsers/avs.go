@@ -39,7 +39,7 @@ import (
 	"github.com/axamon/hermes/zipfile"
 )
 
-const avsheader = "#giornoq;device;timestamp;cli;hash;attivita;idvideoteca;standard;metodopagamento;ignoto;ignoto1;mailcliente;ignoto3;servizio;costruttore;tipoprog;case;rete;num"
+const avsheader = "giornoq;device;timestamp;cli;hash;attivita;idvideoteca;standard;metodopagamento;ignoto;ignoto1;mailcliente;ignoto3;servizio;costruttore;tipoprog;case;rete;num"
 const timeAVSFormat = "2006-01-02T15:04:05"
 
 var isAVS = regexp.MustCompile(`(?m)^.*\|.*\|.*$`)
@@ -69,7 +69,7 @@ func AVS(ctx context.Context, logfile string) (err error) {
 	csvWriter := csv.NewWriter(gw)
 	csvWriter.Comma= ';'
 	// Scrive headers.
-	gw.Write([]byte("#Log AVS prodotto da piattaforma Hermes Copyright 2019 alberto.bregliano@telecomitalia.it\n"))
+	//gw.Write([]byte("#Log AVS prodotto da piattaforma Hermes Copyright 2019 alberto.bregliano@telecomitalia.it\n"))
 	gw.Write([]byte(avsheader + "\n"))
 	
 
@@ -205,7 +205,7 @@ func AVS(ctx context.Context, logfile string) (err error) {
 	}
 
 	// Scrive footer.
-	gw.Write([]byte("#Numero di records: " + strconv.Itoa(n) + "\n"))
+	//gw.Write([]byte("#Numero di records: " + strconv.Itoa(n) + "\n"))
 	gw.Close()
 
 	// err = ioutil.WriteFile(newFile, []byte(justString), 0644)

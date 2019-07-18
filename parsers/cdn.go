@@ -70,8 +70,8 @@ func CDN(ctx context.Context, logfile string) (err error) {
 	defer gw.Close()
 
 	// Scrive headers.
-	gw.Write([]byte("#Log CDN prodotto da piattaforma Hermes Copyright 2019 alberto.bregliano@telecomitalia.it\n"))
-	gw.Write([]byte("#giornoq;hashfruizione;clientip;idvideoteca;status;tts[nanosecondi];bytes[bytes]\n"))
+	//gw.Write([]byte("#Log CDN prodotto da piattaforma Hermes Copyright 2019 alberto.bregliano@telecomitalia.it\n"))
+	gw.Write([]byte("giornoq;hashfruizione;clientip;idvideoteca;status;tts[nanosecondi];bytes[bytes]\n"))
 
 	content, err := zipfile.ReadAllGZ(ctx, logfile)
 	if err != nil {
@@ -110,12 +110,12 @@ func CDN(ctx context.Context, logfile string) (err error) {
 	// Scrive dati.
 	//gw.Write([]byte(justString + "\n"))
 	// Scrive footer.
-	cdnRecords.Lock()
-	_, err = gw.Write([]byte("#Numero di cdnrecords: " + strconv.Itoa(n) + "\n"))
-	if err != nil {
-		log.Println("ERROR Impossibile scrivere su file zippato")
-	}
-	cdnRecords.Unlock()
+	// cdnRecords.Lock()
+	// _, err = gw.Write([]byte("#Numero di cdnrecords: " + strconv.Itoa(n) + "\n"))
+	// if err != nil {
+	// 	log.Println("ERROR Impossibile scrivere su file zippato")
+	// }
+	// cdnRecords.Unlock()
 	gw.Close()
 
 	// Scrive uno per uno su standard output i record offuscati.

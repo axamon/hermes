@@ -38,7 +38,7 @@ import (
 	"github.com/axamon/hermes/zipfile"
 )
 
-const headerregman = "#giornoq;cpeid;tgu;trap_timestamp;deviceid;devicetype;mode;originipaddress;averagebitrate;avgsskbps;bufferingduration;callerclass;callerrorcode;callerrormessage;callerrortype;callurl;errordesc;errorreason;eventname;levelbitrates;linespeedkbps;maxsschunkkbps;maxsskbps;minsskbps;streamingtype;videoduration;videoposition;videotitle;videotype;videourl;eventtype;fwversion;networktype;ra_version;update_time;trap_provider;mid;service_id;service_id_version;date_rif;video_provider;max_upstream_net_latency;min_upstream_net_latency;avg_upstream_net_latency;max_downstream_net_latency;min_downstream_net_latency;avg_downstream_net_latency;max_platform_latency;min_platform_latency;avg_platform_latency;packet_loss;preloaded_app_v"
+const headerregman = "giornoq;cpeid;tgu;trap_timestamp;deviceid;devicetype;mode;originipaddress;averagebitrate;avgsskbps;bufferingduration;callerclass;callerrorcode;callerrormessage;callerrortype;callurl;errordesc;errorreason;eventname;levelbitrates;linespeedkbps;maxsschunkkbps;maxsskbps;minsskbps;streamingtype;videoduration;videoposition;videotitle;videotype;videourl;eventtype;fwversion;networktype;ra_version;update_time;trap_provider;mid;service_id;service_id_version;date_rif;video_provider;max_upstream_net_latency;min_upstream_net_latency;avg_upstream_net_latency;max_downstream_net_latency;min_downstream_net_latency;avg_downstream_net_latency;max_platform_latency;min_platform_latency;avg_platform_latency;packet_loss;preloaded_app_v"
 
 const timeRegmanFormat = "2006-01-02 15:04:05"
 
@@ -70,7 +70,7 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 	csvWriter.Comma= ';'
 
 	// Scrive headers.
-	gw.Write([]byte("#Log REGMAN prodotto da piattaforma Hermes Copyright 2019 alberto.bregliano@telecomitalia.it\n"))
+	//gw.Write([]byte("#Log REGMAN prodotto da piattaforma Hermes Copyright 2019 alberto.bregliano@telecomitalia.it\n"))
 	gw.Write([]byte(headerregman + "\n"))
 
 	// fmt.Println(logfile) // debug
@@ -121,7 +121,7 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 		// Viene aggiunto a records un record con i campi individuati
 		// separati da ";".
 
-		// Scrive dati.
+		
 		// Scrive dati.
 		err := csvWriter.Write(s)
 		if err != nil {
@@ -136,7 +136,7 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 
 	
 	// Scrive footer.
-	gw.Write([]byte("#Numero di records: " + strconv.Itoa(n) + "\n"))
+	//gw.Write([]byte("#Numero di records: " + strconv.Itoa(n) + "\n"))
 	gw.Close()
 
 	// Scrive uno per uno su standard output i record offuscati.
@@ -248,6 +248,8 @@ func elaboraREGMAN2(ctx context.Context, line *string) (topic string, result []s
 
 	// recupera ip cliente
 
+
+
 	//! OFFUSCAMENTO CAMPI SENSIBILI
 	// s[6] contiente ip pubblico cliente.
 	s[6], err = hasher.StringSumWithSalt(s[6], salt)
@@ -259,6 +261,14 @@ func elaboraREGMAN2(ctx context.Context, line *string) (topic string, result []s
 	s[1], err = hasher.StringSumWithSalt(s[1], salt)
 	if err != nil {
 		log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
+	}
+
+	// Metto virgolette attorno a titolo film
+	if s[26] != "" {
+		titolo := s[26]
+		// fmt.Println(titolo)
+		s[26] = `"`+titolo+`"`
+		// fmt.Println(s[26])
 	}
 
 	//e := strings.Join(s, ";")

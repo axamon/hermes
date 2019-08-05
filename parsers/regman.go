@@ -21,6 +21,7 @@
 package parsers
 
 import (
+	"fmt"
 	"encoding/csv"
 	"bufio"
 	"bytes"
@@ -28,6 +29,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -43,6 +45,8 @@ const headerregman = "giornoq;cpeid;tgu;trap_timestamp;deviceid;devicetype;mode;
 const timeRegmanFormat = "2006-01-02 15:04:05"
 
 var isREGMAN = regexp.MustCompile(`(?m)^.*deviceid.*$`)
+
+var isIdVideoteca = regexp.MustCompile(`^\d{8,8}$`)
 
 var regmanLock sync.Mutex
 
@@ -264,14 +268,54 @@ func elaboraREGMAN2(ctx context.Context, line *string) (topic string, result []s
 	}
 
 	// Metto virgolette attorno a titolo film
-	if s[26] != "" {
-		titolo := s[26]
-		// fmt.Println(titolo)
-		s[26] = `"`+titolo+`"`
-		// fmt.Println(s[26])
+	// if s[26] != "" {
+	// 	titolo := s[26]
+	// 	// fmt.Println(titolo)
+	// 	s[26] = `"`+titolo+`"`
+	// 	// fmt.Println(s[26])
+	// }
+
+	// Eliminazione campo titolo
+	s[26] = "" // questo è il campo con il nome del film viene sostituito con idvideoteca
+	s[36] = "" // nei games ci sono titoli che hanno apici
+	s[33] = "" // a volte questo campo ha apici
+	for n, l := range s {
+		if strings.Contains(l, `'`) {
+			fmt.Println(n, s)
+			time.Sleep(2 * time.Second)
+		}
+	}
+	//e := strings.Join(s, ";")
+
+	// Parsa la URL nelle sue componenti.
+	u, err := url.Parse(s[28])
+	if err != nil {
+		log.Printf("Error nel parsing URL di: %s\n", *line)
 	}
 
-	//e := strings.Join(s, ";")
+	Urlpath := u.Path
+	//fmt.Println(Urlpath)
+	//Urlquery := u.RawQuery
+	//Urlfragment := u.Fragment
+	pezziurl := strings.Split(Urlpath, "/")
+
+	
+
+	
+	if len(pezziurl) <= 6 {
+		s[28] = "NON DISPONIBILE"
+	}
+
+	if len(pezziurl) > 8 {
+		idvideoteca := []byte(pezziurl[8])
+		if isIdVideoteca.Match(idvideoteca) == true {
+			s[28]  = pezziurl[8]
+		}
+	}
+
+	if strings.Contains(s[28],"http") {
+		s[28] = "NON DISPONIBILE"
+	}
 
 	//result = append(result, giornoq, e)
 	//Prepend field

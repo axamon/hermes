@@ -39,7 +39,7 @@ import (
 	"github.com/axamon/hermes/zipfile"
 )
 
-const avsheader = "giornoq;device;timestamp;cli;cpeid;attivita;idvideoteca;standard;metodopagamento;ignoto;ignoto1;mailcliente;ignoto3;servizio;costruttore;tipoprog;case;rete;num"
+const avsheader = "giornoq;device;timestamp;tgu;cpeid;attivita;idvideoteca;standard;metodopagamento;ignoto;ignoto1;mailcliente;ignoto3;servizio;costruttore;tipoprog;case;rete;num"
 const timeAVSFormat = "2006-01-02T15:04:05"
 
 var isAVS = regexp.MustCompile(`(?m)^.*\|.*\|.*$`)

@@ -21,6 +21,7 @@
 package parsers
 
 import (
+	"github.com/axamon/hermes/idvideoteca"
 	"fmt"
 	"encoding/csv"
 	"bufio"
@@ -29,7 +30,6 @@ import (
 	"context"
 	"log"
 	"os"
-	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -46,7 +46,7 @@ const timeRegmanFormat = "2006-01-02 15:04:05"
 
 var isREGMAN = regexp.MustCompile(`(?m)^.*deviceid.*$`)
 
-var isIdVideoteca = regexp.MustCompile(`^\d{8,8}$`)
+//var isIdVideoteca = regexp.MustCompile(`^\d{8,8}$`)
 
 var regmanLock sync.Mutex
 
@@ -113,7 +113,7 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 
 		_, s, err = elaboraREGMAN2(ctx, &line)
 		if err != nil {
-			log.Printf("Error Impossibile elaborare REGMAN record: %s", s)
+			log.Printf("Error Impossibile elaborare REGMAN record: %s", err.Error())
 		}
 
 		// if len(s) < 2 {
@@ -158,62 +158,6 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 	return err
 }
 
-func elaboraREGMAN(ctx context.Context, line *string) (topic string, result []string, err error) {
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	// ricerca le fruzioni nell'intervallo temporale richiesto
-	// l'intervallo temporale inzia con l'inzio di una fruizione
-
-	// Splitta la linea nei supi fields.
-	// Il separatore per i log REGMAN è ";"
-	s := strings.Split(*line, ";")
-
-	t, err := time.ParseInLocation(timeRegmanFormat, s[2], loc)
-	if err != nil {
-		log.Println(err.Error())
-	}
-
-	ora := t.UTC().Hour()
-	minuto := t.UTC().Minute()
-
-	// calcola a quale quartodora appartiene il dato.
-	quartoora := ((ora * 60) + minuto) / 15
-
-	quartooraStr := strconv.Itoa(quartoora)
-
-	//IDipq, _ := hasher.StringSum(s[6] + quartooraStr)
-
-	//epoch := t.Format(time.RFC1123Z)
-
-	// Crea il campo giornoq per integrare i log al quarto d'ora.
-	giornoq := t.UTC().Format("20060102") + "q" + quartooraStr
-
-	//Time := t.Format("200601021504") //idem con patate questo è lo stracazzuto ISO8601 meglio c'è solo epoch
-	//fmt.Println(Time)
-
-	// recupera ip cliente
-
-	//! OFFUSCAMENTO CAMPI SENSIBILI
-	// s[6] contiente ip pubblico cliente.
-	s[6], err = hasher.StringSumWithSalt(s[6], salt)
-	if err != nil {
-		log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
-	}
-
-	// s[1] contiene il cli del cliente.
-	s[1], err = hasher.StringSumWithSalt(s[1], salt)
-	if err != nil {
-		log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
-	}
-
-	e := strings.Join(s, ";")
-
-	result = append(result, giornoq, e)
-
-	return giornoq, result, err
-}
 
 func elaboraREGMAN2(ctx context.Context, line *string) (topic string, result []string, err error) {
 
@@ -226,6 +170,8 @@ func elaboraREGMAN2(ctx context.Context, line *string) (topic string, result []s
 	// Splitta la linea nei supi fields.
 	// Il separatore per i log REGMAN è ";"
 	s := strings.Split(*line, ";")
+
+	
 
 	t, err := time.ParseInLocation(timeRegmanFormat, s[2], loc)
 	if err != nil {
@@ -287,34 +233,14 @@ func elaboraREGMAN2(ctx context.Context, line *string) (topic string, result []s
 	}
 	//e := strings.Join(s, ";")
 
-	// Parsa la URL nelle sue componenti.
-	u, err := url.Parse(s[28])
-	if err != nil {
-		log.Printf("Error nel parsing URL di: %s\n", *line)
-	}
 
-	Urlpath := u.Path
-	//fmt.Println(Urlpath)
-	//Urlquery := u.RawQuery
-	//Urlfragment := u.Fragment
-	pezziurl := strings.Split(Urlpath, "/")
-
-	
-
-	
-	if len(pezziurl) <= 6 {
-		s[28] = "NON DISPONIBILE"
-	}
-
-	if len(pezziurl) > 8 {
-		idvideoteca := []byte(pezziurl[8])
-		if isIdVideoteca.Match(idvideoteca) == true {
-			s[28]  = pezziurl[8]
+	// Se è un VOD estrae id videoteca univoco del vod
+	if strings.Contains(strings.ToLower(s[27]), "vod") {
+		idv, erridv := idvideoteca.Find(s[28])
+		if erridv != nil {
+			idv = "NON DISPONIBILE"
 		}
-	}
-
-	if strings.Contains(s[28],"http") {
-		s[28] = "NON DISPONIBILE"
+		s[28] = idv
 	}
 
 	//result = append(result, giornoq, e)

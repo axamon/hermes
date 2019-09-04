@@ -50,7 +50,7 @@ type Fruizioni struct {
 
 
 // Per idvideoteca
-var idV = regexp.MustCompile(`(?m)(/)\d{8,8}(/)`)
+var idV = regexp.MustCompile(`(?m)(/)\d{7,8}(/)`)
 
 // Per manifest
 var isDash = regexp.MustCompile(`(?m)\.mpd$`)

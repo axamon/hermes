@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-var re = regexp.MustCompile(`(?m)(/)\d{8,8}(/)`)
+var re = regexp.MustCompile(`(?m)(/)\d{7,8}(/)`)
 // var isURLEncoded = regexp.MustCompile(`%`)
 
 // var onlyNum = regexp.MustCompile(`[^0-9]+`)

@@ -20,6 +20,7 @@ func TestFind(t *testing.T) {
 		{"SingleTitle", args{s: "http://vodabr.cb.ticdn.it/videoteca2/V3/SingleTitle/2019/05/60000243/SS/20089777/20089777_HD.ism/Manifest"}, "60000243", false},
 		{"SS", args{s: "http://vodabr.cb.ticdn.it/videoteca2/V3/Film/2014/09/50434361/SS/20086428/20086428_HD.ism/Manifest"}, "50434361", false},
 		{"Urlencoded", args{s: "http%3A%2F%2Fvodabr.cb.ticdn.it%2Fvideoteca2%2FV3%2FFilm%2F2017%2F06%2F50670127%2FSS%2F11473278%2F11473278_SD.ism%2FManifest%23https%3A%2F%2Flicense.cubovision.it%2FLicense%2Frightsmanager.asmx"}, "50670127", false},
+		{"Vecchissima", args{s: "http%3A%2F%2Fvodabr.cb.ticdn.it%2Fvideoteca2%2FV3%2FFilm%2F2007%2F04%2F3878794%2FSS%2F11494240%2F11494240_HD.ism%2FManifest%23https%3A%2F%2Flicense.cubovision.it%2FLicense%2Frightsmanager.asmx"}, "3878794", false },
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

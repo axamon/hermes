@@ -1,36 +1,34 @@
 package idvideoteca
 
 import (
-	"net/url"
 	"log"
-//	"strings"
-    "regexp"
-    "fmt"
+	"net/url"
+	"regexp"
+	"strings"
 )
 
-var re = regexp.MustCompile(`(?m)(/|%2[fF])\d{8,8}(/|%2[fF])`)
-var onlyNum = regexp.MustCompile(`[^0-9]+`)
+var re = regexp.MustCompile(`(?m)(/)\d{8,8}(/)`)
+
+// var onlyNum = regexp.MustCompile(`[^0-9]+`)
 
 // Find trova l'id videoteca nella stringa passata come argomento se esiste
 // altrimenti riporta "NON DISPONIBILE".
 func Find(rawurl string) (idvideoteca string, err error) {
-	
-	decodedurl, err := url.QueryUnescape(rawurl)
-	if err != nil {
-		log.Println(err.Error())
+
+	if strings.Contains(rawurl, "%") {
+		rawurl, err = url.QueryUnescape(rawurl)
+		if err != nil {
+			log.Println(err.Error())
+			return "", err
+		}
 	}
 
 	// Cerca la prima corrispondenza
-	elements := re.FindAllString(decodedurl, 1)
-	
-	// Se non ci sono corrispondenze esce con errore
-	if len(elements) <1 {
-		return "", fmt.Errorf("idvideoteca NON DISPONIBILE")
-	}
+	idvideoteca = re.FindString(rawurl)
 
+	// idvideoteca = onlyNum.ReplaceAllString(element, "")
 
-	idvideoteca = onlyNum.ReplaceAllString(elements[0], "")
+	idvideoteca = strings.ReplaceAll(idvideoteca, "/", "")
 
-	return idvideoteca, nil
-	
+	return idvideoteca, err
 }

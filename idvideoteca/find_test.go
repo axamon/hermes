@@ -1,6 +1,7 @@
-package idvideoteca
+package idvideoteca_test
 
 import (
+	"github.com/axamon/hermes/idvideoteca"
 	"fmt"
 	"strings"
 	"testing"
@@ -24,7 +25,7 @@ func TestFind(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotIdvideoteca, err := Find(tt.args.s)
+			gotIdvideoteca, err := idvideoteca.Find(tt.args.s)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Find() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -54,7 +55,7 @@ func ExampleFind() {
 
 	for _, element := range elements {
 		//fmt.Println(element)
-		idv, err := Find(element)
+		idv, err := idvideoteca.Find(element)
 		if err != nil {
 			idv = "NON DISPOBINILE"
 		}
@@ -77,7 +78,7 @@ func BenchmarkFind(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		for _, element := range elements {
 			//fmt.Println(element)
-			Find(element)
+			idvideoteca.Find(element)
 		}
 	}
 }

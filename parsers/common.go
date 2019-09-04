@@ -56,6 +56,7 @@ var idV = regexp.MustCompile(`(?m)(/)\d{7,8}(/)`)
 var isDash = regexp.MustCompile(`(?m)\.mpd$`)
 var isSS = regexp.MustCompile(`(?m)^.*\.ism`)
 
+// Videoteca è una inerfaccia per i metodi di estrazione dati utili.
 type Videoteca interface {
 	GetIDVideoteca() string
 	GetManifestURL() string

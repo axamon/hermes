@@ -1,13 +1,12 @@
 package idvideoteca
 
 import (
-	"log"
 	"net/url"
 	"regexp"
 	"strings"
 )
 
-var re = regexp.MustCompile(`(?m)(/)\d{7,8}(/)`)
+var idv = regexp.MustCompile(`(?m)(/)\d{7,8}(/)`)
 // var isURLEncoded = regexp.MustCompile(`%`)
 
 // var onlyNum = regexp.MustCompile(`[^0-9]+`)
@@ -20,13 +19,13 @@ func Find(rawurl string) (idvideoteca string, err error) {
 	// if isURLEncoded.MatchString(rawurl) {
 		rawurl, err = url.QueryUnescape(rawurl)
 		if err != nil {
-			log.Println(err.Error())
+			// log.Println(err.Error())
 			return "", err
 		}
 	}
 
 	// Cerca la prima corrispondenza
-	idvideoteca = re.FindString(rawurl)
+	idvideoteca = idv.FindString(rawurl)
 
 	// idvideoteca = onlyNum.ReplaceAllString(element, "")
 

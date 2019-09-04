@@ -1,8 +1,7 @@
 package manifest
 
 import (
-	"log"
-	"net/http"
+//	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
@@ -18,7 +17,6 @@ func Find(rawurl string) (urlmanifest string, err error) {
 	if strings.Contains(rawurl, "%") {
 		rawurl, err = url.QueryUnescape(rawurl)
 		if err != nil {
-			log.Println(err.Error())
 			return "", err
 		}
 	}
@@ -39,10 +37,7 @@ func Find(rawurl string) (urlmanifest string, err error) {
 }
 
 // IsManifestReachable esegue un curl HEAD sul manifest passato come argomento.
-func IsManifestReachable(urlmanifest string) error {
-	_, err := http.Head(urlmanifest)
-	if err != nil {
-		log.Println(err.Error())
-	}
-	return err
-}
+// func IsManifestReachable(urlmanifest string) error {
+// 	_, err := http.Head(urlmanifest)
+// 	return err
+// }

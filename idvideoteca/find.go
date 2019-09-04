@@ -8,6 +8,7 @@ import (
 )
 
 var re = regexp.MustCompile(`(?m)(/)\d{8,8}(/)`)
+// var isURLEncoded = regexp.MustCompile(`%`)
 
 // var onlyNum = regexp.MustCompile(`[^0-9]+`)
 
@@ -16,6 +17,7 @@ var re = regexp.MustCompile(`(?m)(/)\d{8,8}(/)`)
 func Find(rawurl string) (idvideoteca string, err error) {
 
 	if strings.Contains(rawurl, "%") {
+	// if isURLEncoded.MatchString(rawurl) {
 		rawurl, err = url.QueryUnescape(rawurl)
 		if err != nil {
 			log.Println(err.Error())
@@ -28,7 +30,7 @@ func Find(rawurl string) (idvideoteca string, err error) {
 
 	// idvideoteca = onlyNum.ReplaceAllString(element, "")
 
-	idvideoteca = strings.ReplaceAll(idvideoteca, "/", "")
+	idvideoteca = strings.Replace(idvideoteca, "/", "", 2)
 
 	return idvideoteca, err
 }

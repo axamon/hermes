@@ -1,7 +1,6 @@
 package idvideoteca
 
 import (
-	"log"
 	"net/url"
 	"regexp"
 	"strings"
@@ -20,7 +19,7 @@ func Find(rawurl string) (idvideoteca string, err error) {
 	// if isURLEncoded.MatchString(rawurl) {
 		rawurl, err = url.QueryUnescape(rawurl)
 		if err != nil {
-			log.Println(err.Error())
+			// log.Println(err.Error())
 			return "", err
 		}
 	}

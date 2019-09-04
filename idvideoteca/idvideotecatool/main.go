@@ -14,7 +14,12 @@ func main() {
 
 		idv, err := idvideoteca.Find(*rawurl)
 		if err != nil {
-			idv = "NON DISPOBINILE"
+			fmt.Println("NON DISPONIBILE: %s", err.Error())
+			return
 		}
+		if idv == "" {
+			fmt.Printf("NON DISPONIBILE: %s", *rawurl)
+		}
+
 		fmt.Println(idv)
 }

@@ -16,10 +16,11 @@ func TestFind(t *testing.T) {
 		wantIdvideoteca string
 		wantErr         bool
 	}{
-		{"Sringa vuota", args{s: ""}, "", true},
+		{"Sringa vuota", args{s: ""}, "", false},
 		{"SingleTitle", args{s: "http://vodabr.cb.ticdn.it/videoteca2/V3/SingleTitle/2019/05/60000243/SS/20089777/20089777_HD.ism/Manifest"}, "60000243", false},
 		{"SS", args{s: "http://vodabr.cb.ticdn.it/videoteca2/V3/Film/2014/09/50434361/SS/20086428/20086428_HD.ism/Manifest"}, "50434361", false},
 		{"Urlencoded", args{s: "http%3A%2F%2Fvodabr.cb.ticdn.it%2Fvideoteca2%2FV3%2FFilm%2F2017%2F06%2F50670127%2FSS%2F11473278%2F11473278_SD.ism%2FManifest%23https%3A%2F%2Flicense.cubovision.it%2FLicense%2Frightsmanager.asmx"}, "50670127", false},
+		{"Vecchissima", args{s: "http%3A%2F%2Fvodabr.cb.ticdn.it%2Fvideoteca2%2FV3%2FFilm%2F2007%2F04%2F3878794%2FSS%2F11494240%2F11494240_HD.ism%2FManifest%23https%3A%2F%2Flicense.cubovision.it%2FLicense%2Frightsmanager.asmx"}, "3878794", false },
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -35,7 +36,6 @@ func TestFind(t *testing.T) {
 	}
 }
 
-
 var str = `
 http://vodabr.cb.ticdn.it/videoteca2/V3/SingleTitle/2019/05/60000242/SS/20089785/20089785_HD.ism/Manifest
 http://vodabr.cb.ticdn.it/videoteca2/V3/SingleTitle/2019/05/60000241/SS/20089779/20089779_HD.ism/Manifest
@@ -48,11 +48,11 @@ http://vodabr.cb.ticdn.it/videoteca2/V3/Film/2019/01/50734100/SS/11483192/114831
 0000000B;000774571385;2019-06-07 23:12:26.382;0000000B;dwt765ti;cubo;82.55.223.125;;7000;;;;;;;;;SS_QUALITY;;;7000;7000;7000;;;;The Handmaid's Tale;VoD;http://vodabr.cb.ticdn.it/videoteca2/V3/SingleTitle/2019/05/60000243/SS/20089777/20089777_HD.ism/Manifest;systemInput;7.0-4.2.9.1-2018.265;wifi;;2019-06-07 23:11:20;;5cfaef5a35172f2ca79a2b75;;10.16.6;2019-06-07 23:12:26.382;TIM;;;;;;;;;;;
 http%3A%2F%2Fvodabr.cb.ticdn.it%2Fvideoteca2%2FV3%2FFilm%2F2017%2F06%2F50670127%2FSS%2F11473278%2F11473278_SD.ism%2FManifest%23https%3A%2F%2Flicense.cubovision.it%2FLicense%2Frightsmanager.asmx`
 
-var  elements = strings.Split(str,"\n")
+var elements = strings.Split(str, "\n")
 
 func ExampleFind() {
 
-	for _, element := range elements  {
+	for _, element := range elements {
 		//fmt.Println(element)
 		idv, err := Find(element)
 		if err != nil {
@@ -61,7 +61,6 @@ func ExampleFind() {
 		fmt.Println(idv)
 	}
 	// Output:
-	// NON DISPOBINILE
 	// 60000242
 	// 60000241
 	// 50734100
@@ -74,10 +73,11 @@ func ExampleFind() {
 	// 50670127
 }
 
-
 func BenchmarkFind(b *testing.B) {
-		for n:=0; n < b.N; n++ {
-
-			Find("http%3A%2F%2Fvodabr.cb.ticdn.it%2Fvideoteca2%2FV3%2FFilm%2F2017%2F06%2F50670127%2FSS%2F11473278%2F11473278_SD.ism%2FManifest%23https%3A%2F%2Flicense.cubovision.it%2FLicense%2Frightsmanager.asmx")
+	for n := 0; n < b.N; n++ {
+		for _, element := range elements {
+			//fmt.Println(element)
+			Find(element)
 		}
 	}
+}

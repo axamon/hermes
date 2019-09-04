@@ -40,13 +40,15 @@ func StringSumWithSalt(str, salt string) (hash string, err error) {
 func FileSum(file string) (hash string, err error) {
 	f, err := os.Open(file)
 	if err != nil {
-		log.Fatal(err)
+		// log.Fatal(err)
+		return "", err
 	}
 	defer f.Close()
 
 	h := sha256.New()
 	if _, err := io.Copy(h, f); err != nil {
-		log.Fatal(err)
+		// log.Fatal(err)
+		return "", err
 	}
 
 	hash = fmt.Sprintf("%x", h.Sum(nil))

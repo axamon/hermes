@@ -15,7 +15,6 @@ import (
 	"log"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -155,6 +154,23 @@ func elaboraREGMAN2(ctx context.Context, line *string) (topic string, result []s
 	// Il separatore per i log REGMAN è ";"
 	s := strings.Split(*line, ";")
 
+	// crea un idv vuoto
+	var idv string
+
+	// Se è un VOD Estrae id videoteca univoco del vod
+	if strings.Contains(strings.ToLower(s[27]), "vod") {
+		idv, _ = idvideoteca.Find(s[28])
+		// if erridv != nil {
+		// 	idv = "NON DISPONIBILE"
+		// }
+		// s[28] = idv
+	}
+
+	// Crea IDNGASP come hash di ngasp.TGU + ngasp.CPEID + ngasp.IDVIDEOTECA non modificati
+	rawIDNGASP := s[0] + s[1] + idv
+	IDNGASP, err := hasher.StringSum(rawIDNGASP)
+
+
 	
 
 	t, err := time.ParseInLocation(timeRegmanFormat, s[2], loc)
@@ -162,23 +178,7 @@ func elaboraREGMAN2(ctx context.Context, line *string) (topic string, result []s
 		log.Println(err.Error())
 	}
 
-	ora := t.UTC().Hour()
-	minuto := t.UTC().Minute()
-
-	// calcola a quale quartodora appartiene il dato.
-	quartoora := ((ora * 60) + minuto) / 15
-
-	quartooraStr := strconv.Itoa(quartoora)
-
-	//IDipq, _ := hasher.StringSum(s[6] + quartooraStr)
-
-	//epoch := t.Format(time.RFC1123Z)
-
-	// Crea il campo giornoq per integrare i log al quarto d'ora.
-	giornoq := t.UTC().Format("20060102") + "q" + quartooraStr
-
-	//Time := t.Format("200601021504") //idem con patate questo è lo stracazzuto ISO8601 meglio c'è solo epoch
-	//fmt.Println(Time)
+	giornoq := giornoq(t)
 
 	// recupera ip cliente
 
@@ -218,18 +218,14 @@ func elaboraREGMAN2(ctx context.Context, line *string) (topic string, result []s
 	//e := strings.Join(s, ";")
 
 
-	// Se è un VOD estrae id videoteca univoco del vod
-	if strings.Contains(strings.ToLower(s[27]), "vod") {
-		idv, erridv := idvideoteca.Find(s[28])
-		if erridv != nil {
-			idv = "NON DISPONIBILE"
-		}
-		s[28] = idv
-	}
+
 
 	//result = append(result, giornoq, e)
 	//Prepend field
 	result = append([]string{giornoq}, s...)
+
+	// Aggiunge IDNGASP alla fine
+	result = append(result, IDNGASP)
 
 	return giornoq, result, err
 }

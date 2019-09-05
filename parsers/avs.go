@@ -22,7 +22,7 @@ import (
 	"github.com/axamon/hermes/zipfile"
 )
 
-const avsheader = "giornoq;device;timestamp;tgu;cpeid;attivita;idvideoteca;standard;metodopagamento;ignoto;ignoto1;mailcliente;ignoto3;servizio;costruttore;tipoprog;case;rete;num"
+const avsheader = "giornoq;device;timestamp;tgu;cpeid;attivita;idvideoteca;standard;metodopagamento;ignoto;ignoto1;mailcliente;ignoto3;servizio;costruttore;tipoprog;case;rete;num;IDAVS"
 const timeAVSFormat = "2006-01-02T15:04:05"
 
 var isAVS = regexp.MustCompile(`(?m)^.*\|.*\|.*$`)
@@ -114,6 +114,10 @@ func ElaboraAVS(ctx context.Context, line string, gw *gzip.Writer) (err error) {
 		log.Fatal("Errore", s)
 	}
 
+	// Crea IDVAS come hash di avs.TGU + avs.CPEID + avs.IDVIDEOTECA non modificati
+	rawIDAVS := s[2] + s[3] + s[5]
+	IDAVS, err := hasher.StringSum(rawIDAVS)
+
 	// Considera i timestamp in orario locale non UTC
 	t, err := time.ParseInLocation(timeAVSFormat, s[1], loc) // impostato in common.go
 	if err != nil {
@@ -165,6 +169,9 @@ func ElaboraAVS(ctx context.Context, line string, gw *gzip.Writer) (err error) {
 
 	//Prepend field
 	result := append([]string{giornoq}, s...)
+
+	// Aggiunge IDAVS alla fine
+	result = append(result, IDAVS)
 
 	recordready := strings.Join(result, ";") + "\n"
 

@@ -5,6 +5,7 @@
 package parsers
 
 import (
+	"strconv"
 	"log"
 	"net/url"
 	"strings"
@@ -92,4 +93,18 @@ func extractManifest(rawurl string) (urlmanifest string, err error) {
 		}
 
 	return urlmanifest, nil
+}
+
+func giornoq(t time.Time) string {
+		ora := t.UTC().Hour()
+		minuto := t.UTC().Minute()
+
+		// calcola a quale quartodora appartiene il dato.
+		quartoora := ((ora * 60) + minuto) / 15
+		quartooraStr := strconv.Itoa(quartoora)
+
+		// Crea il campo giornoq per integrare i log al quarto d'ora.
+		giornoq := t.UTC().Format("20060102") + "q" + quartooraStr
+
+		return giornoq
 }

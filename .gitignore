@@ -6,3 +6,4 @@
 *.pl
 *.prof
 !logs.csv.gz
+!testavs.csv.gz

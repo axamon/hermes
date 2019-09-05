@@ -14,7 +14,6 @@ import (
 	"net/url"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -26,8 +25,8 @@ import (
 var isCDN = regexp.MustCompile(`(?s)^\[.*\]\t[0-9]+\t\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\t[A-Z_]+\/\d{3}\t\d+\t[A-Z]+\t.*$`)
 
 var n int
-var cdnrecords []string
 
+var cdnrecords []string
 var cdnRecords sync.Mutex
 
 // CDN è il parser dei log provenienti dalla Content Delivery Network
@@ -100,6 +99,7 @@ func CDN(ctx context.Context, logfile string) (err error) {
 	// 	log.Println("ERROR Impossibile scrivere su file zippato")
 	// }
 	// cdnRecords.Unlock()
+	gw.Flush()
 	gw.Close()
 
 	// Scrive uno per uno su standard output i record offuscati.
@@ -152,25 +152,7 @@ func elaboraCDN(ctx context.Context, line *string, gw *gzip.Writer) { //(topic s
 		log.Println(err.Error())
 	}
 
-	ora := t.Hour()
-	minuto := t.Minute()
-
-	// Calcola a quale quarto d'ora appartiene il dato.
-	quartoora := ((ora * 60) + minuto) / 15
-
-	// Trasforma quartoora in stringa.
-	quartooraStr := strconv.Itoa(quartoora)
-
-	//IDipq, _ := hasher.StringSum(s[2] + quartooraStr)
-
-	//epoch := t.Format(time.RFC1123Z)
-
-	//Time := t.Format("200601021504") //idem con patate questo è lo stracazzuto ISO8601 meglio c'è solo epoch
-	//fmt.Println(Time)
-	//var speed, tts, bytes float64
-
-	// Crea il campo giornoq per integrare i log al quarto d'ora.
-	giornoq := t.Format("20060102") + "q" + quartooraStr
+	giornoq := giornoq(t)
 
 	// Recupera l'ip del cliente.
 	clientip := s[2]
@@ -239,7 +221,7 @@ func elaboraCDN(ctx context.Context, line *string, gw *gzip.Writer) { //(topic s
 	record := strings.Join(str, ";") + "\n"
 	//cdnrecords = append(cdnrecords, strings.Join(str, ";"))
 	cdnRecords.Lock()
-	gw.Write([]byte(record))
+		gw.Write([]byte(record))
 	cdnRecords.Unlock()
 
 	//chancdnrecords <- &result

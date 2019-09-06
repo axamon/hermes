@@ -40,7 +40,7 @@ var writerchannel = make(chan string, 1)
 
 
 // REGMAN è il parser delle trap provenienti da REGMAN.
-func REGMAN(ctx context.Context, logfile string) (err error) {
+func REGMAN(ctx context.Context, logfile string, maxNumRoutines int) (err error) {
 	
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -107,7 +107,7 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 		numRoutines := runtime.NumGoroutine()
 		wgNGASP.Add(1)
 		switch  {
-		case  numRoutines > 1000:
+		case  numRoutines > maxNumRoutines:
 			ElaboraREGMAN(ctx, &line, gw)
 		default:
 			go ElaboraREGMAN(ctx, &line, gw)

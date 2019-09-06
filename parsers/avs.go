@@ -10,6 +10,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/csv"
+	"fmt"
 	"log"
 	"os"
 	"regexp"
@@ -41,9 +42,6 @@ func AVS(ctx context.Context, logfile string) (err error) {
 	newFile := strings.Split(logfile, ".csv.gz")[0] + ".offuscato.csv.gz"
 
 	f, err := os.Create(newFile)
-	if err != nil {
-		return err
-	}
 
 	gw := gzip.NewWriter(f)
 	defer gw.Close()
@@ -51,11 +49,9 @@ func AVS(ctx context.Context, logfile string) (err error) {
 	csvWriter := csv.NewWriter(gw)
 	csvWriter.Comma = ';'
 
-
 	// Scrive headers.
 	//gw.Write([]byte("#Log AVS prodotto da piattaforma Hermes Copyright 2019 alberto.bregliano@telecomitalia.it\n"))
 	gw.Write([]byte(avsheader + "\n"))
-
 
 	// Apre file zippato in memoria
 	content, err := zipfile.ReadAllGZ(ctx, logfile)
@@ -71,7 +67,6 @@ func AVS(ctx context.Context, logfile string) (err error) {
 	for scan.Scan() {
 		n++
 
-		
 		line := scan.Text()
 
 		wgAVS.Add(1)
@@ -97,12 +92,13 @@ func ElaboraAVS(ctx context.Context, line string, gw *gzip.Writer) (err error) {
 	// Sistema le linee con più account di posta.
 	line = GestisciMailMultiple(line)
 
-
 	// Il separatore per i log AVS è "|"
 	s := strings.Split(line, "|")
 
 	if len(s) != 18 {
-		log.Fatalf("Errore: Linea contiene un numero di campi diverso da 18: %s", s)
+		err = fmt.Errorf("Errore: Linea contiene un numero di campi diverso da 18: %s", s)
+		log.Println(err)
+		return err
 	}
 
 	// Crea IDVAS come hash di avs.TGU + avs.CPEID + avs.IDVIDEOTECA non modificati
@@ -112,7 +108,7 @@ func ElaboraAVS(ctx context.Context, line string, gw *gzip.Writer) (err error) {
 	// Considera i timestamp in orario locale non UTC
 	t, err := time.ParseInLocation(timeAVSFormat, s[1], loc) // impostato in common.go
 	if err != nil {
-		log.Println(err.Error())
+		log.Fatalf("Impossibile recuperare file per fuso orario locale: %s", err.Error())
 	}
 
 	// Calcolo il quarto d'ora di riferimento
@@ -122,15 +118,9 @@ func ElaboraAVS(ctx context.Context, line string, gw *gzip.Writer) (err error) {
 
 	// Effettua hash della mail dell'utente.
 	s[10], err = hasher.StringSumWithSalt(s[10], salt)
-	if err != nil {
-		log.Printf("Error Hashing in errore: %s\n", err.Error())
-	}
 
 	// Gestione account secondari
 	s[11], err = hasher.StringSumWithSalt(s[11], salt)
-	if err != nil {
-		log.Printf("Error Hashing in errore: %s\n", err.Error())
-	}
 
 	// Gestione TGU
 	l := int(len(s[2]))
@@ -146,9 +136,6 @@ func ElaboraAVS(ctx context.Context, line string, gw *gzip.Writer) (err error) {
 		fallthrough
 	case l == 12:
 		s[2], err = hasher.StringSumWithSalt(s[2], salt)
-		if err != nil {
-			log.Printf("Error Hashing in errore: %s\n", err.Error())
-		}
 	}
 
 	// Gestione CPEID s[3]
@@ -169,13 +156,14 @@ func ElaboraAVS(ctx context.Context, line string, gw *gzip.Writer) (err error) {
 	// Scrive dati.
 	//err = csvWriter.Write(result)
 	AVSLock.Lock()
-		gw.Write([]byte(recordready))
+	gw.Write([]byte(recordready))
 	AVSLock.Unlock()
 
 	return err
 }
 
-
+// GestisciMailMultiple permette di effettuare hashing di email cliente
+// multiple nei log AVS.
 func GestisciMailMultiple(line string) string {
 	if strings.Contains(line, `"`) {
 		ll := strings.Split(line, `"`)
@@ -184,7 +172,7 @@ func GestisciMailMultiple(line string) string {
 		}
 		return strings.Join(ll, "")
 	}
-		return line
+	return line
 }
 
 // Invia i records su kafka locale.

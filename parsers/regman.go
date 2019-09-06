@@ -36,16 +36,14 @@ var wgNGASP sync.WaitGroup
 
 var writerchannel = make(chan string, 1)
 
-
 // REGMAN è il parser delle trap provenienti da REGMAN.
 func REGMAN(ctx context.Context, logfile string, maxNumRoutines int) (err error) {
-	
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	// Utilizzerà il massimo dei processori disponibili meno uno.
-	runtime.GOMAXPROCS(runtime.NumCPU()-1)
+	runtime.GOMAXPROCS(runtime.NumCPU() - 1)
 
 	done := make(chan bool)
 
@@ -67,12 +65,11 @@ func REGMAN(ctx context.Context, logfile string, maxNumRoutines int) (err error)
 	//gw.Write([]byte("#Log REGMAN prodotto da piattaforma Hermes Copyright 2019 alberto.bregliano@telecomitalia.it\n"))
 	gw.Write([]byte(headerregman + "\n"))
 
-
 	go func() {
 		for {
 			select {
-			case row := <- writerchannel:
-					gw.Write([]byte(row))
+			case row := <-writerchannel:
+				gw.Write([]byte(row))
 			case <-done:
 				return
 			}
@@ -94,14 +91,16 @@ func REGMAN(ctx context.Context, logfile string, maxNumRoutines int) (err error)
 		n++
 
 		// Salta header.
-		if n == 1 { continue }
+		if n == 1 {
+			continue
+		}
 
 		line := scan.Text()
 
 		numRoutines := runtime.NumGoroutine()
 		wgNGASP.Add(1)
-		switch  {
-		case  numRoutines > maxNumRoutines:
+		switch {
+		case numRoutines > maxNumRoutines:
 			ElaboraREGMAN(ctx, &line, gw)
 		default:
 			go ElaboraREGMAN(ctx, &line, gw)
@@ -127,8 +126,6 @@ func ElaboraREGMAN(ctx context.Context, line *string, gw *gzip.Writer) (err erro
 	defer cleanUP()
 
 	defer wgNGASP.Done()
-
-
 
 	// ricerca le fruzioni nell'intervallo temporale richiesto
 	// l'intervallo temporale inzia con l'inzio di una fruizione
@@ -167,15 +164,9 @@ func ElaboraREGMAN(ctx context.Context, line *string, gw *gzip.Writer) (err erro
 
 	// Effettue hash ip pubblico cliente.
 	s[6], err = hasher.StringSumWithSalt(s[6], salt)
-	if err != nil {
-		log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
-	}
 
 	// Effettue hash del cli cliente.
 	s[1], err = hasher.StringSumWithSalt(s[1], salt)
-	if err != nil {
-		log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
-	}
 
 	// Eliminazione campo titolo
 	s[26] = "" // questo è il campo con il nome del film viene sostituito con idvideoteca

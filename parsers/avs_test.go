@@ -23,6 +23,8 @@ func TestAVS(t *testing.T) {
 	}{
 		{"Primo", args{ctx: context.TODO(), logfile: "testavs.csv.gz"}, false},
 		{"Fileinesistente", args{ctx: context.TODO(), logfile: "testavs1.csv.gz"}, true},
+		{"Tgucorta", args{ctx: context.TODO(), logfile: "testavstgusbagliata.csv.gz"}, false},
+		{"filemalformato", args{ctx: context.TODO(), logfile: "testavsmalformato.csv.gz"}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -49,7 +51,10 @@ func Test_gestisciMailMultiple(t *testing.T) {
 		args args
 		want string
 	}{
-		{"Primo", args{line: `"fsdfa@fsdfa.it | pipo@fsfs.it"` }, "fsdfa@fsdfa.it   pipo@fsfs.it"},
+
+		{"Solo", args{line: `"fsdfa@fsdfa.it"`}, "fsdfa@fsdfa.it"},
+		{"Primo", args{line: `"fsdfa@fsdfa.it | pipo@fsfs.it"`}, "fsdfa@fsdfa.it   pipo@fsfs.it"},
+		{"Secondo", args{line: `"fsdfa@fsdfa.it | pipo@fsfs.it | jhjh@jljk.it"`}, "fsdfa@fsdfa.it   pipo@fsfs.it   jhjh@jljk.it"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

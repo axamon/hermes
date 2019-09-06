@@ -9,3 +9,5 @@
 !testavs.csv.gz
 !testngasp.csv.gz
 !testcdn.csv.gz
+!test*
+*.offuscato.csv.gz

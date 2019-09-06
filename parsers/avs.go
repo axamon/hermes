@@ -38,8 +38,6 @@ func AVS(ctx context.Context, logfile string) (err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	start := time.Now()
-
 	// Apre nuovo file per salvare dati elaborati.
 	newFile := strings.Split(logfile, ".csv.gz")[0] + ".offuscato.csv.gz"
 
@@ -77,6 +75,9 @@ func AVS(ctx context.Context, logfile string) (err error) {
 		
 		line := scan.Text()
 
+		// Sistema le linee con più account di posta.
+		line = gestisciMailMultiple(line)
+
 		wgAVS.Add(1)
 		go ElaboraAVS(ctx, line, gw)
 	}
@@ -89,7 +90,6 @@ func AVS(ctx context.Context, logfile string) (err error) {
 	gw.Flush()
 	gw.Close()
 
-	fmt.Println("Impiegato: ", time.Since(start))
 	return err
 }
 
@@ -125,8 +125,6 @@ func ElaboraAVS(ctx context.Context, line string, gw *gzip.Writer) (err error) {
 
 	// Calcolo il quarto d'ora di riferimento
 	giornoq := giornoq(t)
-
-	// idvideoteca := s[5]
 
 	// ! OFFUSCAMENTO CAMPI SENSIBILI
 
@@ -183,6 +181,18 @@ func ElaboraAVS(ctx context.Context, line string, gw *gzip.Writer) (err error) {
 	AVSLock.Unlock()
 
 	return err
+}
+
+
+func gestisciMailMultiple(line string) string {
+	if strings.Contains(line, `"`) {
+		ll := strings.Split(line, `"`)
+		if strings.Contains(ll[1], "|") {
+			ll[1] = strings.Replace(ll[1], "|", " ", -1)
+		}
+		return strings.Join(ll, "")
+	}
+		return line
 }
 
 // Invia i records su kafka locale.

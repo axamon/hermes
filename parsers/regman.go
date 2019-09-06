@@ -51,8 +51,6 @@ func REGMAN(ctx context.Context, logfile string, maxNumRoutines int) (err error)
 
 	done := make(chan bool)
 
-	start := time.Now()
-
 	// Apre nuovo file per salvare dati elaborati.
 	newFile := strings.Split(logfile, ".csv.gz")[0] + ".offuscato.csv.gz"
 
@@ -98,9 +96,7 @@ func REGMAN(ctx context.Context, logfile string, maxNumRoutines int) (err error)
 		n++
 
 		// Salta header.
-		if n == 1 {
-			continue
-		}
+		if n == 1 { continue }
 
 		line := scan.Text()
 
@@ -111,9 +107,7 @@ func REGMAN(ctx context.Context, logfile string, maxNumRoutines int) (err error)
 			ElaboraREGMAN(ctx, &line, gw)
 		default:
 			go ElaboraREGMAN(ctx, &line, gw)
-	}
-
-	
+		}
 	}
 
 	wgNGASP.Wait()
@@ -125,7 +119,6 @@ func REGMAN(ctx context.Context, logfile string, maxNumRoutines int) (err error)
 	gw.Flush()
 	gw.Close()
 
-	fmt.Println("Impiegato: ", time.Since(start))
 	return err
 }
 

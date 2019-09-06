@@ -24,7 +24,7 @@ import (
 	"github.com/axamon/hermes/zipfile"
 )
 
-const headerregman = "giornoq;cpeid;tgu;trap_timestamp;deviceid;devicetype;mode;originipaddress;averagebitrate;avgsskbps;bufferingduration;callerclass;callerrorcode;callerrormessage;callerrortype;callurl;errordesc;errorreason;eventname;levelbitrates;linespeedkbps;maxsschunkkbps;maxsskbps;minsskbps;streamingtype;videoduration;videoposition;videotitle;videotype;videourl;eventtype;fwversion;networktype;ra_version;update_time;trap_provider;mid;service_id;service_id_version;date_rif;video_provider;max_upstream_net_latency;min_upstream_net_latency;avg_upstream_net_latency;max_downstream_net_latency;min_downstream_net_latency;avg_downstream_net_latency;max_platform_latency;min_platform_latency;avg_platform_latency;packet_loss;preloaded_app_v"
+const headerregman = "giornoq;cpeid;tgu;trap_timestamp;deviceid;devicetype;mode;originipaddress;averagebitrate;avgsskbps;bufferingduration;callerclass;callerrorcode;callerrormessage;callerrortype;callurl;errordesc;errorreason;eventname;levelbitrates;linespeedkbps;maxsschunkkbps;maxsskbps;minsskbps;streamingtype;videoduration;videoposition;videotitle;videotype;videourl;eventtype;fwversion;networktype;ra_version;update_time;trap_provider;mid;service_id;service_id_version;date_rif;video_provider;max_upstream_net_latency;min_upstream_net_latency;avg_upstream_net_latency;max_downstream_net_latency;min_downstream_net_latency;avg_downstream_net_latency;max_platform_latency;min_platform_latency;avg_platform_latency;packet_loss;preloaded_app_v;IDNGASP;IDCDN"
 const timeRegmanFormat = "2006-01-02 15:04:05"
 
 // var isREGMAN = regexp.MustCompile(`(?m)^.*deviceid.*$`)
@@ -145,9 +145,14 @@ func ElaboraREGMAN(ctx context.Context, line *string, gw *gzip.Writer) (err erro
 		idv, _ = idvideoteca.Find(s[28])
 	}
 
+	clientip := s[6]
+
 	// Crea IDNGASP come hash di ngasp.TGU + ngasp.CPEID + ngasp.IDVIDEOTECA non modificati
 	rawIDNGASP := s[0] + s[1] + idv
 	IDNGASP, err := hasher.StringSum(rawIDNGASP)
+
+	rawIDCDN := clientip + idv
+	IDCDN, err := hasher.StringSum(rawIDCDN)
 
 	t, err := time.ParseInLocation(timeRegmanFormat, s[2], loc)
 	if err != nil {
@@ -186,7 +191,7 @@ func ElaboraREGMAN(ctx context.Context, line *string, gw *gzip.Writer) (err erro
 	result := append([]string{giornoq}, s...)
 
 	// Aggiunge IDNGASP alla fine
-	result = append(result, IDNGASP)
+	result = append(result, IDNGASP, IDCDN)
 
 	recordready := strings.Join(result, ";") + "\n"
 

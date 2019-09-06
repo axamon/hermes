@@ -10,7 +10,6 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/csv"
-	"fmt"
 	"log"
 	"os"
 	"regexp"

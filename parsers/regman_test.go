@@ -1,7 +1,5 @@
 // Copyright 2019 Alberto Bregliano. All rights reserved.
-
 // Use of this source code is governed by a BSD-style
-
 // license that can be found in the LICENSE file.
 
 package parsers_test
@@ -28,16 +26,20 @@ func TestREGMAN(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := parsers.REGMAN(tt.args.ctx, tt.args.logfile); (err != nil) != tt.wantErr {
+			if err := parsers.REGMAN(tt.args.ctx, tt.args.logfile, 1000); (err != nil) != tt.wantErr {
 				t.Errorf("REGMAN() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 }
 
-func BenchmarkREGMAN(b *testing.B) {
+func benchmarkREGMAN(numofgoroutins int, b *testing.B) {
 	for n := 0; n < b.N; n++ {
-
-		parsers.REGMAN(context.TODO(), "testngasp.csv.gz")
+		parsers.REGMAN(context.TODO(), "testngasp.csv.gz", numofgoroutins)
 	}
 }
+
+func BenchmarkREGMAN10(b *testing.B)  {benchmarkREGMAN(10, b)}
+func BenchmarkREGMAN100(b *testing.B)  {benchmarkREGMAN(100, b)}
+func BenchmarkREGMAN1000(b *testing.B)  {benchmarkREGMAN(1000, b)}
+func BenchmarkREGMAN10000(b *testing.B)  {benchmarkREGMAN(10000, b)}

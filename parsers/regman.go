@@ -14,6 +14,7 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -35,11 +36,20 @@ var NGASPLock sync.Mutex
 
 var wgNGASP sync.WaitGroup
 
+var writerchannel = make(chan string, 1)
+
+
 // REGMAN è il parser delle trap provenienti da REGMAN.
-func REGMAN(ctx context.Context, logfile string) (err error) {
+func REGMAN(ctx context.Context, logfile string, maxNumRoutines int) (err error) {
+	
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+
+	// Utilizzerà il massimo dei processori disponibili meno uno.
+	runtime.GOMAXPROCS(runtime.NumCPU()-1)
+
+	done := make(chan bool)
 
 	start := time.Now()
 
@@ -60,6 +70,18 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 	// Scrive headers.
 	//gw.Write([]byte("#Log REGMAN prodotto da piattaforma Hermes Copyright 2019 alberto.bregliano@telecomitalia.it\n"))
 	gw.Write([]byte(headerregman + "\n"))
+
+
+	go func() {
+		for {
+			select {
+			case row := <- writerchannel:
+					gw.Write([]byte(row))
+			case <-done:
+				return
+			}
+		}
+	}()
 
 	// Apri file zippato in memoria.
 	content, err := zipfile.ReadAllGZ(ctx, logfile)
@@ -82,12 +104,21 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 
 		line := scan.Text()
 
+		numRoutines := runtime.NumGoroutine()
 		wgNGASP.Add(1)
-		go ElaboraREGMAN(ctx, line, gw)
+		switch  {
+		case  numRoutines > maxNumRoutines:
+			ElaboraREGMAN(ctx, &line, gw)
+		default:
+			go ElaboraREGMAN(ctx, &line, gw)
+	}
 
+	
 	}
 
 	wgNGASP.Wait()
+	done <- true
+	// defer close(writerchannel)
 
 	// Scrive footer.
 	//gw.Write([]byte("#Numero di records: " + strconv.Itoa(n) + "\n"))
@@ -99,16 +130,21 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 }
 
 // ElaboraREGMAN crea il file csv compresso con i campi sensibili offuscati.
-func ElaboraREGMAN(ctx context.Context, line string, gw *gzip.Writer) (err error) {
+func ElaboraREGMAN(ctx context.Context, line *string, gw *gzip.Writer) (err error) {
+
+	ctx, cleanUP := context.WithCancel(ctx)
+	defer cleanUP()
 
 	defer wgNGASP.Done()
+
+
 
 	// ricerca le fruzioni nell'intervallo temporale richiesto
 	// l'intervallo temporale inzia con l'inzio di una fruizione
 
 	// Splitta la linea nei suoi campi.
 	// Il separatore per i log REGMAN è ";"
-	s := strings.Split(line, ";")
+	s := strings.Split(*line, ";")
 
 	// crea un idv vuoto
 	var idv string
@@ -165,9 +201,12 @@ func ElaboraREGMAN(ctx context.Context, line string, gw *gzip.Writer) (err error
 
 	// Scrive dati.
 	//err = csvWriter.Write(result)
-	NGASPLock.Lock()
-		gw.Write([]byte(recordready))
-	NGASPLock.Unlock()
+	// NGASPLock.Lock()
+	// gw.Write([]byte(recordready))
+	// // gw.Flush()
+	// NGASPLock.Unlock()
+	writerchannel <- recordready
 
+	runtime.Gosched()
 	return err
 }

@@ -18,6 +18,7 @@ import (
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
 var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
+var goroutines = flag.Int("g", 1000, "Numero di processi paralleli da usare")
 var logfile = flag.String("f", "", "Logfile da parsare")
 var tipo = flag.String("t", "", "tipo Logfile da parsare")
 
@@ -49,7 +50,7 @@ func main() {
 			log.Printf("Error Impossibile parsare file CDN %s: %s\n", *logfile, err.Error())
 		}
 	case "REGMAN":
-		err = parsers.REGMAN(ctx, *logfile)
+		err = parsers.REGMAN(ctx, *logfile, *goroutines)
 		if err != nil {
 			log.Printf("Error Impossibile parsare file REGMAN %s: %s\n", *logfile, err.Error())
 		}

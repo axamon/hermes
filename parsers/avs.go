@@ -75,7 +75,7 @@ func AVS(ctx context.Context, logfile string) (err error) {
 		line := scan.Text()
 
 		// Sistema le linee con più account di posta.
-		line = gestisciMailMultiple(line)
+		line = GestisciMailMultiple(line)
 
 		wgAVS.Add(1)
 		go ElaboraAVS(ctx, line, gw)
@@ -183,7 +183,7 @@ func ElaboraAVS(ctx context.Context, line string, gw *gzip.Writer) (err error) {
 }
 
 
-func gestisciMailMultiple(line string) string {
+func GestisciMailMultiple(line string) string {
 	if strings.Contains(line, `"`) {
 		ll := strings.Split(line, `"`)
 		if strings.Contains(ll[1], "|") {

@@ -39,3 +39,23 @@ func BenchmarkAVS(b *testing.B) {
 		parsers.AVS(context.TODO(), "testavs.csv.gz")
 	}
 }
+
+func Test_gestisciMailMultiple(t *testing.T) {
+	type args struct {
+		line string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"Primo", args{line: `"fsdfa@fsdfa.it | pipo@fsfs.it"` }, "fsdfa@fsdfa.it   pipo@fsfs.it"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := parsers.GestisciMailMultiple(tt.args.line); got != tt.want {
+				t.Errorf("gestisciMailMultiple() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

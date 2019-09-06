@@ -74,9 +74,6 @@ func AVS(ctx context.Context, logfile string) (err error) {
 		
 		line := scan.Text()
 
-		// Sistema le linee con più account di posta.
-		line = GestisciMailMultiple(line)
-
 		wgAVS.Add(1)
 		go ElaboraAVS(ctx, line, gw)
 	}
@@ -97,13 +94,9 @@ func ElaboraAVS(ctx context.Context, line string, gw *gzip.Writer) (err error) {
 
 	defer wgAVS.Done()
 
-	if strings.Contains(line, `"`) {
-		ll := strings.Split(line, `"`)
-		if strings.Contains(ll[1], "|") {
-			ll[1] = strings.Replace(ll[1], "|", " ", -1)
-		}
-		line = strings.Join(ll, "")
-	}
+	// Sistema le linee con più account di posta.
+	line = GestisciMailMultiple(line)
+
 
 	// Il separatore per i log AVS è "|"
 	s := strings.Split(line, "|")

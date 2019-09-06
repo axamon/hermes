@@ -27,8 +27,8 @@ const timeAVSFormat = "2006-01-02T15:04:05"
 
 var isAVS = regexp.MustCompile(`(?m)^.*\|.*\|.*$`)
 
-var avsrecords []string
-var avsRecords sync.Mutex
+// AVSLock gestisce l'accesso simultaneo alla scrittura sul file di output.
+var AVSLock sync.Mutex
 
 var wgAVS sync.WaitGroup
 
@@ -43,8 +43,6 @@ func AVS(ctx context.Context, logfile string) (err error) {
 	// Apre nuovo file per salvare dati elaborati.
 	newFile := strings.Split(logfile, ".csv.gz")[0] + ".offuscato.csv.gz"
 
-	// fmt.Println(newFile)
-
 	f, err := os.Create(newFile)
 	if err != nil {
 		return err
@@ -55,18 +53,18 @@ func AVS(ctx context.Context, logfile string) (err error) {
 
 	csvWriter := csv.NewWriter(gw)
 	csvWriter.Comma = ';'
+
+
 	// Scrive headers.
 	//gw.Write([]byte("#Log AVS prodotto da piattaforma Hermes Copyright 2019 alberto.bregliano@telecomitalia.it\n"))
 	gw.Write([]byte(avsheader + "\n"))
 
-	//var s []string
-	//var topic string
 
 	// Apri file zippato in memoria
 	content, err := zipfile.ReadAllGZ(ctx, logfile)
 	if err != nil {
 		log.Printf("Error impossibile leggere file AVS %s, %s\n", logfile, err.Error())
-		return
+		return err
 	}
 
 	r := bytes.NewReader(content)
@@ -76,9 +74,10 @@ func AVS(ctx context.Context, logfile string) (err error) {
 	for scan.Scan() {
 		n++
 
-		wgAVS.Add(1)
+		
 		line := scan.Text()
 
+		wgAVS.Add(1)
 		go ElaboraAVS(ctx, line, gw)
 	}
 
@@ -111,7 +110,7 @@ func ElaboraAVS(ctx context.Context, line string, gw *gzip.Writer) (err error) {
 	s := strings.Split(line, "|")
 
 	if len(s) != 18 {
-		log.Fatal("Errore", s)
+		log.Fatalf("Errore: Linea contiene un numero di campi diverso da 18: %s", s)
 	}
 
 	// Crea IDVAS come hash di avs.TGU + avs.CPEID + avs.IDVIDEOTECA non modificati
@@ -163,6 +162,8 @@ func ElaboraAVS(ctx context.Context, line string, gw *gzip.Writer) (err error) {
 	}
 
 	// Gestione CPEID s[3]
+	// Ci sono CPEID che sono numeri enormi con la virgola
+	// se li trovo ci faccio un hash
 	if strings.Contains(s[3], ",") {
 		s[3], err = hasher.StringSum(s[3])
 	}
@@ -177,9 +178,9 @@ func ElaboraAVS(ctx context.Context, line string, gw *gzip.Writer) (err error) {
 
 	// Scrive dati.
 	//err = csvWriter.Write(result)
-	avsRecords.Lock()
-	gw.Write([]byte(recordready))
-	avsRecords.Unlock()
+	AVSLock.Lock()
+		gw.Write([]byte(recordready))
+	AVSLock.Unlock()
 
 	return err
 }

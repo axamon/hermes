@@ -5,19 +5,20 @@
 package parsers
 
 import (
-	"github.com/axamon/hermes/idvideoteca"
-	"fmt"
-	"encoding/csv"
 	"bufio"
 	"bytes"
 	"compress/gzip"
 	"context"
+	"encoding/csv"
+	"fmt"
 	"log"
 	"os"
 	"regexp"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/axamon/hermes/idvideoteca"
 
 	"github.com/axamon/hermes/hasher"
 	"github.com/axamon/hermes/zipfile"
@@ -29,11 +30,10 @@ const timeRegmanFormat = "2006-01-02 15:04:05"
 
 var isREGMAN = regexp.MustCompile(`(?m)^.*deviceid.*$`)
 
-//var isIdVideoteca = regexp.MustCompile(`^\d{8,8}$`)
+// NGASPLock gestisce l'accesso simultaneo alla scrittura sul file di output.
+var NGASPLock sync.Mutex
 
-var regmanLock sync.Mutex
-
-var regmanrecords []string
+var wgNGASP sync.WaitGroup
 
 // REGMAN è il parser delle trap provenienti da REGMAN.
 func REGMAN(ctx context.Context, logfile string) (err error) {
@@ -41,43 +41,37 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	start := time.Now()
+
 	// Apre nuovo file per salvare dati elaborati.
 	newFile := strings.Split(logfile, ".csv.gz")[0] + ".offuscato.csv.gz"
-	// fmt.Println(newFile)
 
 	f, err := os.Create(newFile)
 	if err != nil {
-		log.Println(err.Error())
+		return err
 	}
 
 	gw := gzip.NewWriter(f)
 	defer gw.Close()
 
 	csvWriter := csv.NewWriter(gw)
-	csvWriter.Comma= ';'
+	csvWriter.Comma = ';'
 
 	// Scrive headers.
 	//gw.Write([]byte("#Log REGMAN prodotto da piattaforma Hermes Copyright 2019 alberto.bregliano@telecomitalia.it\n"))
 	gw.Write([]byte(headerregman + "\n"))
 
-	// fmt.Println(logfile) // debug
-
 	// Apri file zippato in memoria.
 	content, err := zipfile.ReadAllGZ(ctx, logfile)
 	if err != nil {
-		log.Printf("Error impossibile leggere file REGMAN %s, %s\n", logfile, err.Error())
+		log.Printf("Error impossibile leggere file NGASP %s, %s\n", logfile, err.Error())
 		return err
 	}
 
 	r := bytes.NewReader(content)
 
-	scan := bufio.NewScanner(r)
-
-	//var records
-	var s []string
-	// var topic string
-
 	n := 0
+	scan := bufio.NewScanner(r)
 	for scan.Scan() {
 		n++
 
@@ -88,71 +82,33 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 
 		line := scan.Text()
 
-		// Verifica che logfile sia di tipo regman.
-		// if !isREGMAN.MatchString(line) {
-		// 	err := fmt.Errorf("Error logfile %s non di tipo REGMAN", logfile)
-		// 	return err
-		// }
-
-		_, s, err = elaboraREGMAN2(ctx, &line)
-		if err != nil {
-			log.Printf("Error Impossibile elaborare REGMAN record: %s", err.Error())
-		}
-
-		// if len(s) < 2 {
-		// 	continue
-		// }
-
-		//fmt.Println(s[:]) // debug
-
-		// Viene aggiunto a records un record con i campi individuati
-		// separati da ";".
-
-		
-		// Scrive dati.
-		err := csvWriter.Write(s)
-		if err != nil {
-			log.Printf("ERROR Impossibile srivere: %s\n", err.Error())
-		}
-		// justString := strings.Join(s, ";")
-		// fmt.Println(justString)
-		// gw.Write([]byte(justString + "\n"))
-		csvWriter.Flush()
+		wgNGASP.Add(1)
+		go ElaboraREGMAN(ctx, line, gw)
 
 	}
 
-	
+	wgNGASP.Wait()
+
 	// Scrive footer.
 	//gw.Write([]byte("#Numero di records: " + strconv.Itoa(n) + "\n"))
+	gw.Flush()
 	gw.Close()
 
-	// Scrive uno per uno su standard output i record offuscati.
-	// for _, record := range records {
-	// 	fmt.Println(record)
-	// }
-
-	// Invia i records su kafka locale.
-	// err = inoltralog.LocalKafkaProducer(ctx, topic, records)
-	// if err != nil {
-	// 	log.Printf("Error Impossibile salvare su kafka: %s\n", err.Error())
-	// }
-
-	//fmt.Println(n)
+	fmt.Println("Impiegato: ", time.Since(start))
 	return err
 }
 
+// ElaboraREGMAN crea il file csv compresso con i campi sensibili offuscati.
+func ElaboraREGMAN(ctx context.Context, line string, gw *gzip.Writer) (err error) {
 
-func elaboraREGMAN2(ctx context.Context, line *string) (topic string, result []string, err error) {
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	defer wgNGASP.Done()
 
 	// ricerca le fruzioni nell'intervallo temporale richiesto
 	// l'intervallo temporale inzia con l'inzio di una fruizione
 
-	// Splitta la linea nei supi fields.
+	// Splitta la linea nei suoi campi.
 	// Il separatore per i log REGMAN è ";"
-	s := strings.Split(*line, ";")
+	s := strings.Split(line, ";")
 
 	// crea un idv vuoto
 	var idv string
@@ -160,18 +116,11 @@ func elaboraREGMAN2(ctx context.Context, line *string) (topic string, result []s
 	// Se è un VOD Estrae id videoteca univoco del vod
 	if strings.Contains(strings.ToLower(s[27]), "vod") {
 		idv, _ = idvideoteca.Find(s[28])
-		// if erridv != nil {
-		// 	idv = "NON DISPONIBILE"
-		// }
-		// s[28] = idv
 	}
 
 	// Crea IDNGASP come hash di ngasp.TGU + ngasp.CPEID + ngasp.IDVIDEOTECA non modificati
 	rawIDNGASP := s[0] + s[1] + idv
 	IDNGASP, err := hasher.StringSum(rawIDNGASP)
-
-
-	
 
 	t, err := time.ParseInLocation(timeRegmanFormat, s[2], loc)
 	if err != nil {
@@ -182,28 +131,19 @@ func elaboraREGMAN2(ctx context.Context, line *string) (topic string, result []s
 
 	// recupera ip cliente
 
+	// ! OFFUSCAMENTO CAMPI SENSIBILI
 
-
-	//! OFFUSCAMENTO CAMPI SENSIBILI
-	// s[6] contiente ip pubblico cliente.
+	// Effettue hash ip pubblico cliente.
 	s[6], err = hasher.StringSumWithSalt(s[6], salt)
 	if err != nil {
 		log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
 	}
 
-	// s[1] contiene il cli del cliente.
+	// Effettue hash del cli cliente.
 	s[1], err = hasher.StringSumWithSalt(s[1], salt)
 	if err != nil {
 		log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
 	}
-
-	// Metto virgolette attorno a titolo film
-	// if s[26] != "" {
-	// 	titolo := s[26]
-	// 	// fmt.Println(titolo)
-	// 	s[26] = `"`+titolo+`"`
-	// 	// fmt.Println(s[26])
-	// }
 
 	// Eliminazione campo titolo
 	s[26] = "" // questo è il campo con il nome del film viene sostituito con idvideoteca
@@ -211,21 +151,23 @@ func elaboraREGMAN2(ctx context.Context, line *string) (topic string, result []s
 	s[33] = "" // a volte questo campo ha apici
 	for n, l := range s {
 		if strings.Contains(l, `'`) {
-			fmt.Println(n, s)
-			time.Sleep(2 * time.Second)
+			fmt.Printf("Il record contiente caratteri non accettati: %d, %s\n", n, s)
 		}
 	}
-	//e := strings.Join(s, ";")
 
-
-
-
-	//result = append(result, giornoq, e)
 	//Prepend field
-	result = append([]string{giornoq}, s...)
+	result := append([]string{giornoq}, s...)
 
 	// Aggiunge IDNGASP alla fine
 	result = append(result, IDNGASP)
 
-	return giornoq, result, err
+	recordready := strings.Join(result, ";") + "\n"
+
+	// Scrive dati.
+	//err = csvWriter.Write(result)
+	NGASPLock.Lock()
+		gw.Write([]byte(recordready))
+	NGASPLock.Unlock()
+
+	return err
 }

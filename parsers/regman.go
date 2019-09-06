@@ -89,16 +89,6 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 
 	wgNGASP.Wait()
 
-	// Scrive dati.
-	// err := csvWriter.Write(s)
-	// if err != nil {
-	// 	log.Printf("ERROR Impossibile srivere: %s\n", err.Error())
-	// }
-	// justString := strings.Join(s, ";")
-	// fmt.Println(justString)
-	// gw.Write([]byte(justString + "\n"))
-	// csvWriter.Flush()
-
 	// Scrive footer.
 	//gw.Write([]byte("#Numero di records: " + strconv.Itoa(n) + "\n"))
 	gw.Flush()
@@ -161,8 +151,7 @@ func ElaboraREGMAN(ctx context.Context, line string, gw *gzip.Writer) (err error
 	s[33] = "" // a volte questo campo ha apici
 	for n, l := range s {
 		if strings.Contains(l, `'`) {
-			fmt.Println(n, s)
-			time.Sleep(2 * time.Second)
+			fmt.Printf("Il record contiente caratteri non accettati: %d, %s\n", n, s)
 		}
 	}
 
@@ -177,7 +166,7 @@ func ElaboraREGMAN(ctx context.Context, line string, gw *gzip.Writer) (err error
 	// Scrive dati.
 	//err = csvWriter.Write(result)
 	NGASPLock.Lock()
-	gw.Write([]byte(recordready))
+		gw.Write([]byte(recordready))
 	NGASPLock.Unlock()
 
 	return err

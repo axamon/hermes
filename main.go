@@ -45,7 +45,7 @@ func main() {
 
 	switch *tipo {
 	case "CDN":
-		err = parsers.CDN(ctx, *logfile)
+		err = parsers.CDN(ctx, *logfile, *goroutines)
 		if err != nil {
 			log.Printf("Error Impossibile parsare file CDN %s: %s\n", *logfile, err.Error())
 		}

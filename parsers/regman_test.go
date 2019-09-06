@@ -1,7 +1,5 @@
 // Copyright 2019 Alberto Bregliano. All rights reserved.
-
 // Use of this source code is governed by a BSD-style
-
 // license that can be found in the LICENSE file.
 
 package parsers_test
@@ -37,7 +35,6 @@ func TestREGMAN(t *testing.T) {
 
 func BenchmarkREGMAN(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-
 		parsers.REGMAN(context.TODO(), "testngasp.csv.gz")
 	}
 }

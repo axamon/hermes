@@ -117,8 +117,8 @@ func REGMAN(ctx context.Context, logfile string) (err error) {
 	}
 
 	wgNGASP.Wait()
-	close(writerchannel)
 	done <- true
+	// defer close(writerchannel)
 
 	// Scrive footer.
 	//gw.Write([]byte("#Numero di records: " + strconv.Itoa(n) + "\n"))

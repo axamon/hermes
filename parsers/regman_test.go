@@ -22,7 +22,7 @@ func TestREGMAN(t *testing.T) {
 		wantErr bool
 	}{
 		{"Primo", args{ctx: context.TODO(), logfile: "testngasp.csv.gz"}, false},
-		{"Fileinesistente", args{ctx: context.TODO(), logfile: "testngasp1.csv.gz"}, true}, // TODO: Add test cases.
+		{"Fileinesistente", args{ctx: context.TODO(), logfile: "testngasp1.csv.gz"}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -39,7 +39,7 @@ func benchmarkREGMAN(numofgoroutins int, b *testing.B) {
 	}
 }
 
-func BenchmarkREGMAN10(b *testing.B)  {benchmarkREGMAN(10, b)}
-func BenchmarkREGMAN100(b *testing.B)  {benchmarkREGMAN(100, b)}
-func BenchmarkREGMAN1000(b *testing.B)  {benchmarkREGMAN(1000, b)}
-func BenchmarkREGMAN10000(b *testing.B)  {benchmarkREGMAN(10000, b)}
+func BenchmarkREGMAN10(b *testing.B)    { benchmarkREGMAN(10, b) }
+func BenchmarkREGMAN100(b *testing.B)   { benchmarkREGMAN(100, b) }
+func BenchmarkREGMAN1000(b *testing.B)  { benchmarkREGMAN(1000, b) }
+func BenchmarkREGMAN10000(b *testing.B) { benchmarkREGMAN(10000, b) }

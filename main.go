@@ -17,7 +17,10 @@ import (
 	"github.com/axamon/hermes/parsers"
 )
 
+const Version = "4.3"
+
 var stat = flag.Bool("stat", false, "riporta a video delle statistiche")
+var version = flag.Bool("version", false, "mostra la versione software")
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
 var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
 var goroutines = flag.Int("g", 1000, "Numero di processi paralleli da usare")
@@ -29,6 +32,11 @@ func main() {
 	flag.Parse()
 
 	var start = time.Now()
+
+	if *version {
+		fmt.Printf("Hermes Versione: %s\n", Version)
+		os.Exit(0)
+	}
 	
 
 	if *cpuprofile != "" {

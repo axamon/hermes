@@ -80,6 +80,17 @@ func Get(ctx context.Context, idvideoteca string) (result Response, err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	result, err = ElaboraResp(bodyBytes)
+
+	return result, err
+}
+
+
+// ElaboraResp elabora la risposta ricevuta dal server.
+func ElaboraResp(bodyBytes []byte) (result Response, err error) {
+
+	// trasforma in stringa
 	bodyString := string(bodyBytes)
 
 	// Elimina il carattere di carriage return di windons che
@@ -91,9 +102,7 @@ func Get(ctx context.Context, idvideoteca string) (result Response, err error) {
 		log.Println(err)
 	}
 
-	
 	return result, err
-
 }
 
 //  0x000A, 0x000B, 0x000C, 0x000D, 0x0085, 0x2028, 0x2029

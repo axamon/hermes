@@ -5,6 +5,7 @@
 package main
 
 import (
+	"time"
 	"context"
 	"flag"
 	"fmt"
@@ -16,6 +17,7 @@ import (
 	"github.com/axamon/hermes/parsers"
 )
 
+var stat = flag.Bool("stat", false, "riporta a video delle statistiche")
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
 var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
 var goroutines = flag.Int("g", 1000, "Numero di processi paralleli da usare")
@@ -25,6 +27,12 @@ var tipo = flag.String("t", "", "tipo Logfile da parsare")
 func main() {
 
 	flag.Parse()
+
+	if *stat {
+		start := time.Now()
+		defer log.Printf("Elaborazione %s: %v\n", *logfile, time.Since(start))
+	}
+
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
 		if err != nil {

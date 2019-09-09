@@ -28,10 +28,8 @@ func main() {
 
 	flag.Parse()
 
-	if *stat {
-		start := time.Now()
-		defer log.Printf("Elaborazione %s: %v\n", *logfile, time.Since(start))
-	}
+	var start = time.Now()
+	
 
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
@@ -81,5 +79,10 @@ func main() {
 		if err := pprof.WriteHeapProfile(f); err != nil {
 			log.Fatal("could not write memory profile: ", err)
 		}
+	}
+
+	if *stat {
+		// start := time.Now()
+		log.Printf("Elaborazione %s: %v\n", *logfile, time.Since(start))
 	}
 }

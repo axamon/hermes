@@ -18,7 +18,7 @@ import (
 )
 
 // Version è la versione attuale di Hermes.
-const Version = "4.3"
+const Version = "4.3.2"
 
 var stat = flag.Bool("stat", false, "riporta a video delle statistiche")
 var version = flag.Bool("version", false, "mostra la versione software")

@@ -34,7 +34,7 @@ var NGASPLock sync.Mutex
 
 var wgNGASP sync.WaitGroup
 
-var writerchannel = make(chan string, 1)
+var writerchannel = make(chan *string, 1)
 
 // REGMAN è il parser delle trap provenienti da REGMAN.
 func REGMAN(ctx context.Context, logfile string, maxNumRoutines int) (err error) {
@@ -69,7 +69,7 @@ func REGMAN(ctx context.Context, logfile string, maxNumRoutines int) (err error)
 		for {
 			select {
 			case row := <-writerchannel:
-				gw.Write([]byte(row))
+				gw.Write([]byte(*row))
 			case <-done:
 				return
 			}
@@ -192,7 +192,7 @@ func ElaboraREGMAN(ctx context.Context, line *string, gw *gzip.Writer) (err erro
 	// gw.Write([]byte(recordready))
 	// // gw.Flush()
 	// NGASPLock.Unlock()
-	writerchannel <- recordready
+	writerchannel <- &recordready
 
 	runtime.Gosched()
 	return err

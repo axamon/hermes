@@ -17,6 +17,7 @@ import (
 	"github.com/axamon/hermes/parsers"
 )
 
+// Version è la versione attuale di Hermes.
 const Version = "4.3"
 
 var stat = flag.Bool("stat", false, "riporta a video delle statistiche")

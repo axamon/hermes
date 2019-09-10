@@ -17,6 +17,7 @@ func main() {
 	var err error
 
 	idvideoteca := os.Args[1]
+	fmt.Printf("cerco: %s", idvideoteca)
 
 	result, err := titolovod.Get(ctx, idvideoteca)
 	if err != nil {

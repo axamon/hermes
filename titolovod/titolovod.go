@@ -1,3 +1,7 @@
+// Copyright 2019 Alberto Bregliano. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package titolovod
 
 import (
@@ -96,6 +100,7 @@ func ElaboraResp(bodyBytes []byte) (result Response, err error) {
 	// Elimina il carattere di carriage return di windons che
 	// ogni tanto si trova nella descrizione dei vod.
 	bodyString2 := strings.ReplaceAll(bodyString, "\u003f", "")
+
 
 	err = json.Unmarshal([]byte(bodyString2), &result)
 	if err != nil {

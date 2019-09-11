@@ -16,6 +16,7 @@ import (
 const searchURLbeginning = "https://www.timvision.it/TIM/10.14.11/PROD/IT/CUBOWEB/ITALY/DETAILS?contentId="
 const searchURLending = "&deviceType=ALL&serviceName=ALL&type=ALL"
 
+// Response riporta i dati della richiesta API.
 type Response []struct {
 	ResultCode string        `json:"resultCode"`
 	SystemTime int           `json:"systemTime"`

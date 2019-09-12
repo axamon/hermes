@@ -25,4 +25,5 @@ func main() {
 	}
 
 	fmt.Println(result[0].ResultObj.Containers[0].Metadata.Title)
+	fmt.Println(result[0].ResultObj.Containers[0].Metadata.Duration)
 }

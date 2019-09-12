@@ -1,3 +1,7 @@
+// Copyright 2019 Alberto Bregliano. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package titolovod
 
 import (
@@ -12,6 +16,7 @@ import (
 const searchURLbeginning = "https://www.timvision.it/TIM/10.14.11/PROD/IT/CUBOWEB/ITALY/DETAILS?contentId="
 const searchURLending = "&deviceType=ALL&serviceName=ALL&type=ALL"
 
+// Response riporta i dati della richiesta API.
 type Response []struct {
 	ResultCode string        `json:"resultCode"`
 	SystemTime int           `json:"systemTime"`
@@ -96,6 +101,7 @@ func ElaboraResp(bodyBytes []byte) (result Response, err error) {
 	// Elimina il carattere di carriage return di windons che
 	// ogni tanto si trova nella descrizione dei vod.
 	bodyString2 := strings.ReplaceAll(bodyString, "\u003f", "")
+
 
 	err = json.Unmarshal([]byte(bodyString2), &result)
 	if err != nil {

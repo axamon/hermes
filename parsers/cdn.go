@@ -11,18 +11,16 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/axamon/hermes/hasher"
 	"github.com/axamon/hermes/zipfile"
 )
 
-const cdnheader = "giornoq;hashfruizione;clientip;idvideoteca;status;tts[nanosecondi];bytes[bytes];IDCDN"
+const cdnheader = "timestamp;hashfruizione;clientip;idvideoteca;status;tts[nanosecondi];bytes[bytes]"
 const timeCDNFormat = "[02/Jan/2006:15:04:05.000+000]"
 
 //var isCDN = regexp.MustCompile(`(?s)^\[.*\]\t[0-9]+\t\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\t[A-Z_]+\/\d{3}\t\d+\t[A-Z]+\t.*$`)
@@ -120,39 +118,35 @@ func ElaboraCDN(ctx context.Context, line *string, gw *gzip.Writer) (err error) 
 
 	defer wgCDN.Done()
 
-	// ricerca le fruzioni nell'intervallo temporale richiesto
-	// l'intervallo temporale inzia con l'inzio di una fruizione
-
-
-
 	// Splitta la linea nei suoi fields,
 	// il separatore per i log CDN è il tab: \t
 	s := strings.Split(*line, "\t")
+
+
+	timestamp := s[0]
+	
+	tts := s[1]
+
+	bytes := s[4]
 
 	// Recupera l'ip del cliente.
 	clientip := s[2]
 
 	// crea un idv vuoto
 	var idv string
-
 	idv, err = idvideoteca.Find(s[6])
 	if err != nil {
 		return err
 	}
 
-	// Crea IDCDN come hash di cdn.CLIENTIP + cdn.IDVIDEOTECA
-	rawIDCDN := clientip + idv
-	IDCDN, err := hasher.StringSum(rawIDCDN)
+	
 
 	// Converte il timestamp del log.
-	t, err := time.Parse(timeCDNFormat, s[0]) // UTC
-	if err != nil {
-		log.Println(err.Error())
-	}
+	// t, err := time.Parse(timeCDNFormat, s[0]) // UTC
+	// if err != nil {
+	// 	log.Println(err.Error())
+	// }
 
-	giornoq := giornoq(t)
-
-	
 
 	// Recupera lo status HTTP del chunk.
 	status := s[3]
@@ -160,50 +154,31 @@ func ElaboraCDN(ctx context.Context, line *string, gw *gzip.Writer) (err error) 
 	// Recupera lo user agent del cliente.
 	ua := s[8]
 
-
-	// Tratta solo i chunck di tipo video // ! da verificare se va bene o no!
-	// if ok := !strings.Contains(Urlpath, "video="); ok == true { //solo i chunk video
-
-	// 	return "", nil, nil
-	// }
-	// if len(pezziurl) < 6 {
-	// 	return
-	// }
-	// Recupera il valore univoco del video.
-	// idvideoteca := pezziurl[6]
-
-	//tipocodifica := pezziurl[7]
-	//idavs := pezziurl[8]
-	//fmt.Println(idvideoteca)
-	//encoding := pezziurl[10]
-	//fmt.Println(encoding)
-	//re := regexp.MustCompile(`QualityLevels\(([0-9]+)\)$`)
-	//bitratestr := re.FindStringSubmatch(encoding)[1]
-	//bitrate, _ := strconv.ParseFloat(bitratestr, 8)
-	/* if err != nil {
-		log.Fatal(err.Error())
-	} */
-	//bitrateMB := bitrate * bitstoMB
+	
 
 	// Crea l'idfruzione univoco del cliente.
+	// cliemtip NON è ancora hashato.
 	Hashfruizione, err := hasher.StringSum(clientip + idv + ua)
 	if err != nil {
 		log.Printf("Error Hashing in errore: %s\n", err.Error())
 	}
 
-	var str []string
-	str = append(str, giornoq, Hashfruizione, clientip, idv, status, s[1], s[4], IDCDN)
+	
 
-	if len(str) < 2 {
-		return fmt.Errorf("Record troppo corto: %v", str)
-	}
+	// if len(str) < 2 {
+	// 	return fmt.Errorf("Record troppo corto: %v", str)
+	// }
+
 
 	// ! OFFUSCAMENTO IP PUBBLICO CLIENTE
 	// s[2] è l'ip pubblico del cliente da offuscare
-	str[2], err = hasher.StringSumWithSalt(str[2], salt)
+	clientiphash, err := hasher.StringSumWithSalt(clientip, salt)
 	if err != nil {
 		log.Printf("Error Imposibile effettuare hashing %s\n", err.Error())
 	}
+
+	var str []string
+	str = append(str, timestamp, Hashfruizione, clientiphash, idv, status, tts, bytes)
 
 	record := strings.Join(str, ";") + "\n"
 	//cdnrecords = append(cdnrecords, strings.Join(str, ";"))

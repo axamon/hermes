@@ -10,13 +10,11 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/csv"
-	"fmt"
 	"log"
 	"os"
 	"runtime"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/axamon/hermes/idvideoteca"
 
@@ -24,7 +22,7 @@ import (
 	"github.com/axamon/hermes/zipfile"
 )
 
-const headerregman = "giornoq;cpeid;tgu;trap_timestamp;deviceid;devicetype;mode;originipaddress;averagebitrate;avgsskbps;bufferingduration;callerclass;callerrorcode;callerrormessage;callerrortype;callurl;errordesc;errorreason;eventname;levelbitrates;linespeedkbps;maxsschunkkbps;maxsskbps;minsskbps;streamingtype;videoduration;videoposition;videotitle;videotype;videourl;eventtype;fwversion;networktype;ra_version;update_time;trap_provider;mid;service_id;service_id_version;date_rif;video_provider;max_upstream_net_latency;min_upstream_net_latency;avg_upstream_net_latency;max_downstream_net_latency;min_downstream_net_latency;avg_downstream_net_latency;max_platform_latency;min_platform_latency;avg_platform_latency;packet_loss;preloaded_app_v;IDNGASP;IDCDN"
+const headerregman = "cpeid;tgu;trap_timestamp;deviceid;devicetype;originipaddress;avgsskbps;bufferingduration;errordesc;errorreason;eventname;linespeedkbps;maxsschunkkbps;maxsskbps;minsskbps;videoduration;videoposition;videotype;videourl;eventtype;fwversion;networktype;ra_version;service_id_version"
 const timeRegmanFormat = "2006-01-02 15:04:05"
 
 // var isREGMAN = regexp.MustCompile(`(?m)^.*deviceid.*$`)
@@ -142,47 +140,104 @@ func ElaboraREGMAN(ctx context.Context, line *string, gw *gzip.Writer) (err erro
 		idv, _ = idvideoteca.Find(s[28])
 	}
 
-	clientip := s[6]
+	cpeid :=s[0]
+	tgu :=s[1]
+	trap_timestamp :=s[2]
+	deviceid :=s[3]
+	devicetype :=s[4]
+	// mode :=s[5]
+	originipaddress :=s[6]
+	// averagebitrate :=s[7]
+	avgsskbps :=s[8]
+	bufferingduration :=s[9]
+	// callerclass :=s[10]
+	// callerrorcode :=s[11]
+	// callerrormessage :=s[12]
+	// callerrortype :=s[13]
+	// callurl :=s[14]
+	errordesc :=s[15]
+	errorreason :=s[16]
+	eventname :=s[17]
+	// levelbitrates :=s[18]
+	linespeedkbps :=s[19]
+	maxsschunkkbps :=s[20]
+	maxsskbps :=s[21]
+	minsskbps :=s[22]
+	// streamingtype :=s[23]
+	videoduration :=s[24]
+	videoposition :=s[25]
+	// videotitle :=s[26]
+	videotype :=s[27]
+	videourl :=s[28]
+	eventtype :=s[29]
+	fwversion :=s[30]
+	networktype :=s[31]
+	ra_version :=s[32]
+	// update_time :=s[33]
+	// trap_provider :=s[34]
+	// mid :=s[35]
+	// service_id :=s[36]
+	service_id_version :=s[37]
+	// date_rif :=s[38]
+	// video_provider :=s[39]
+	// max_upstream_net_latency :=s[40]
+	// min_upstream_net_latency :=s[41]
+	// avg_upstream_net_latency :=s[42]
+	// max_downstream_net_latency :=s[43]
+	// min_downstream_net_latency :=s[44]
+	// avg_downstream_net_latency :=s[45]
+	// max_platform_latency :=s[46]
+	// min_platform_latency :=s[47]
+	// avg_platform_latency :=s[48]
+	// packet_loss :=s[49]
+	// preloaded_app_v :=s[50]
+	
 
-	// Crea IDNGASP come hash di ngasp.TGU + ngasp.CPEID + ngasp.IDVIDEOTECA non modificati
-	rawIDNGASP := s[0] + s[1] + idv
-	IDNGASP, err := hasher.StringSum(rawIDNGASP)
 
-	rawIDCDN := clientip + idv
-	IDCDN, err := hasher.StringSum(rawIDCDN)
-
-	t, err := time.ParseInLocation(timeRegmanFormat, s[2], loc)
-	if err != nil {
-		log.Println(err.Error())
-	}
-
-	giornoq := giornoq(t)
+	// t, err := time.ParseInLocation(timeRegmanFormat, s[2], loc)
+	// if err != nil {
+	// 	log.Println(err.Error())
+	// }
 
 	// recupera ip cliente
 
 	// ! OFFUSCAMENTO CAMPI SENSIBILI
 
 	// Effettue hash ip pubblico cliente.
-	s[6], err = hasher.StringSumWithSalt(s[6], salt)
+	originipaddressHASH, err := hasher.StringSumWithSalt(originipaddress, salt)
 
 	// Effettue hash del cli cliente.
-	s[1], err = hasher.StringSumWithSalt(s[1], salt)
+	tguHASH, err := hasher.StringSumWithSalt(tgu, salt)
 
-	// Eliminazione campo titolo
-	s[26] = "" // questo è il campo con il nome del film viene sostituito con idvideoteca
-	s[36] = "" // nei games ci sono titoli che hanno apici
-	s[33] = "" // a volte questo campo ha apici
-	for n, l := range s {
-		if strings.Contains(l, `'`) {
-			fmt.Printf("Il record contiente caratteri non accettati: %d, %s\n", n, s)
-		}
-	}
 
+	var resutlt []string
 	//Prepend field
-	result := append([]string{giornoq}, s...)
-
-	// Aggiunge IDNGASP alla fine
-	result = append(result, IDNGASP, IDCDN)
+	result := append(resutlt,
+		cpeid,
+		tguHASH, // campo hashato
+		trap_timestamp,
+		deviceid,
+		devicetype,
+		originipaddressHASH, // campo hashato
+		avgsskbps,
+		bufferingduration,
+		errordesc,
+		errorreason,
+		eventname,
+		linespeedkbps,
+		maxsschunkkbps,
+		maxsskbps,
+		minsskbps,
+		videoduration,
+		videoposition,
+		videotype,
+		videourl,
+		eventtype,
+		fwversion,
+		networktype,
+		ra_version,
+		service_id_version,
+		idv) // aggiunge campo con idunicovideoteca
 
 	recordready := strings.Join(result, ";") + "\n"
 
